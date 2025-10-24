@@ -1,45 +1,61 @@
-const express = require('express')
-const sql = require('../Models/db.js')
-const users = require('../Models/User.js')
-const properties = require("../Models/properties")
-const profile = require("../Models/profile.js")
-const favourites = require("../Models/favourites.js")
-const bookings = require("../Models/bookings")
-const propertRoutes = require("../routes/propertyRoutes.js")
-const cors = require('cors');
+import express from 'express';
+import cors from 'cors';
+import session from 'express-session';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+import { ENV } from './config/env.js';
+import { errorHandler } from './middleware/error.js';
 
-app = express()
+import authRoutes from './routes/auth.routes.js';
+import profileRoutes from './routes/profile.routes.js';
+import propertyRoutes from './routes/property.routes.js';
+import bookingRoutes from './routes/booking.routes.js';
+import favoriteRoutes from './routes/favorite.routes.js';
 
-app.use(cors())
-app.use(express.json)
+// get __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Connecting with Database
-async function startDatabase() {
-    try {
-        await sql.authenticate()
-        await sql.sync()
-    } catch (err) {
-        console.log("Database Could not be Synced")
-        console.log(err)
+const app = express();
+
+// middlewares
+app.use(cors({ origin: ENV.ORIGIN, credentials: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// sessions
+app.use(
+  session({
+    secret: ENV.SESSION_SECRET,
+    name: ENV.SESSION_NAME,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false
     }
-}
+  })
+);
 
-startDatabase().then(() => console.log("Database Connected")) ;
-// Database connection Ended
-//Home Page
-app.use('/', propertRoutes);
+// serve uploaded images
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-app.get("/login" , (req,res)=>{
-    const {userName , password} = req.body
+// routes
+app.use('/api/auth', authRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/properties', propertyRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/favorites', favoriteRoutes);
 
-})
+// health check
+app.get('/api/health', (req, res) => res.json({ ok: true }));
 
-app.get("/signup" , (req,res)=>{
-    console.log("Sign Up Page")
-})
+// error handler
+app.use(errorHandler);
 
-
-app.listen(3000 , () =>{
-    console.log("Port Running at 3000")
-})
+// start server
+app.listen(ENV.PORT, () =>
+  console.log(`Server running on http://localhost:${ENV.PORT}`)
+);
