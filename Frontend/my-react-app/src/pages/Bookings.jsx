@@ -1,39 +1,41 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/axios";
+import { useAuth } from "../context/AuthContext";
 
 export default function Bookings() {
-  const [bookings, setBookings] = useState([]);
+  const [rows, setRows] = useState([]);
+  const { user } = useAuth();
 
-  async function fetchBookings() {
+  async function load() {
     const { data } = await api.get("/bookings");
-    setBookings(data.bookings);
+    setRows(data.bookings || []);
   }
-
-  async function updateStatus(id, status) {
+  async function setStatus(id, status) {
     await api.patch(`/bookings/${id}/status`, { status });
-    fetchBookings();
+    load();
   }
-
-  useEffect(() => { fetchBookings(); }, []);
+  useEffect(()=>{ load(); },[]);
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">My Bookings</h1>
-      {bookings.map(b => (
-        <div key={b.id} className="border rounded p-3 mb-2 flex justify-between">
+    <div className="space-y-3 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold">Bookings</h1>
+      {rows.map(b => (
+        <div key={b.id} className="border rounded p-3 flex justify-between items-center">
           <div>
-            <p className="font-semibold">{b.title}</p>
-            <p>{b.start_date} → {b.end_date}</p>
-            <p>Status: <b>{b.status}</b></p>
+            <div className="font-semibold">{b.title || `Property #${b.property_id}`}</div>
+            <div className="text-sm text-gray-600">{b.location}</div>
+            <div className="text-sm">{b.start_date} → {b.end_date} · guests {b.guests}</div>
+            <div className="mt-1">Status: <b>{b.status}</b></div>
           </div>
-          {b.status === "PENDING" && (
+          {user?.role === "owner" && b.status === "PENDING" && (
             <div className="flex gap-2">
-              <button className="border px-2" onClick={() => updateStatus(b.id, "ACCEPTED")}>Accept</button>
-              <button className="border px-2" onClick={() => updateStatus(b.id, "CANCELLED")}>Cancel</button>
+              <button onClick={()=>setStatus(b.id,"ACCEPTED")} className="border px-3 py-1 rounded">Accept</button>
+              <button onClick={()=>setStatus(b.id,"CANCELLED")} className="border px-3 py-1 rounded">Cancel</button>
             </div>
           )}
         </div>
       ))}
+      {rows.length===0 && <div className="text-gray-600">No bookings yet.</div>}
     </div>
   );
 }

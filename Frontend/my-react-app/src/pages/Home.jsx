@@ -1,48 +1,39 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/axios";
-import { Link } from "react-router-dom";
+import SearchBar from "../components/SearchBar";
+import PropertyCard from "../components/PropertyCard";
 
 export default function Home() {
-  const [listings, setListings] = useState([]);
-  const [search, setSearch] = useState("");
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  async function fetchData() {
-    const res = await api.get("/properties/search", { params: { location: search } });
-    setListings(res.data.properties);
+  async function fetchList(params = {}) {
+    setLoading(true);
+    try {
+      const { data } = await api.get("/properties/search", { params });
+      setList(data.properties || []);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchList(); }, []);
 
   return (
-    <>
-      <div className="flex gap-2 mb-4">
-        <input
-          placeholder="Search location..."
-          className="border p-2 rounded w-full"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <button onClick={fetchData} className="bg-red-500 text-white px-4 rounded">
-          Search
-        </button>
+    <div className="space-y-4">
+      <div className="sticky top-[64px] bg-white z-40 py-3">
+        <SearchBar onSearch={fetchList} />
       </div>
 
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {listings.map((p) => (
-          <Link key={p.id} to={`/property/${p.id}`} className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md">
-            <img
-              src={p.images?.length ? `http://localhost:4000${JSON.parse(p.images)[0]}` : "https://placehold.co/300x200"}
-              alt={p.title}
-              className="h-40 w-full object-cover"
-            />
-            <div className="p-3">
-              <h3 className="font-semibold">{p.title}</h3>
-              <p className="text-sm text-gray-600">{p.location}</p>
-              <p className="font-semibold">${p.price_per_night} / night</p>
-            </div>
-          </Link>
-        ))}
+      {loading && <div className="text-center py-10">Loading listings…</div>}
+
+      {!loading && list.length === 0 && (
+        <div className="text-center text-gray-600 py-10">No places match your search.</div>
+      )}
+
+      <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+        {list.map((p) => <PropertyCard key={p.id} p={p} />)}
       </div>
-    </>
+    </div>
   );
 }
