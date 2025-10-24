@@ -1,9 +1,9 @@
-const {sql} = require("./db.js")
+const sql = require("./db.js")
 const { DataTypes } = require('sequelize')
 
 const User = sql.define('User', {
       id: {
-        type: DataTypes.INT,
+        type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
       },
