@@ -1,6 +1,10 @@
 const express = require('express')
 const sql = require('./Models/db.js')
 const users = require('./Models/users.js')
+const properties = require("./Models/properties")
+const profile = require("./Models/profile.js")
+const favourites = require("./Models/favourites.js")
+const bookings = require("./Models/bookings")
 
 app = express()
 
