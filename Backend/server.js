@@ -7,6 +7,10 @@ app.get("/login" , (req,res)=>{
 
 })
 
+app.get("/signup" , (req,res)=>{
+    console.log("Sign Up Page")
+})
+
 app.listen(3000 , () =>{
     console.log("Port Running at 3000")
 })
