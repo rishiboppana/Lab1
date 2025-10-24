@@ -1,14 +1,47 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Home from './pages/home.jsx';
+import { Routes, Route, Link, Navigate, useNavigate } from "react-router-dom";
+import AuthProvider, { useAuth } from "./context/AuthContext";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import PropertyDetails from "./pages/PropertyDetails";
+import PostProperty from "./pages/PostProperty";
+import Bookings from "./pages/Bookings";
+import Favorites from "./pages/Favorites";
+import Profile from "./pages/Profile";
+import Navbar from "./components/Navbar.jsx";
 
-function App() {
+function Protected({ children }) {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  return children;
+}
+
+function Layout() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-      </Routes>
-    </Router>
+    <>
+      <Navbar />
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/property/:id" element={<PropertyDetails />} />
+          <Route path="/post" element={<Protected><PostProperty /></Protected>} />
+          <Route path="/bookings" element={<Protected><Bookings /></Protected>} />
+          <Route path="/favorites" element={<Protected><Favorites /></Protected>} />
+          <Route path="/profile" element={<Protected><Profile /></Protected>} />
+        </Routes>
+      </div>
+    </>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <AuthProvider>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/*" element={<Layout />} />
+      </Routes>
+    </AuthProvider>
+  );
+}
