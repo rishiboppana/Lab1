@@ -5,12 +5,16 @@ import { Star } from "lucide-react";
 import toast from "react-hot-toast";
 import { DateRange } from "react-date-range";
 import { addDays } from "date-fns";
+import { format } from "date-fns";
+import { useAuth } from "../context/AuthContext";
+
 
 export default function PropertyDetails() {
   const { id } = useParams();
   const [property, setProperty] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [newReview, setNewReview] = useState({ rating: 5, comment: "" });
+  const { user } = useAuth();
 
   const [range, setRange] = useState([
     { startDate: new Date(), endDate: addDays(new Date(), 3), key: "selection" },
@@ -131,9 +135,37 @@ export default function PropertyDetails() {
             </span>
           </p>
 
-          <button className="mt-3 w-full bg-airbnb-red text-white rounded-full py-2 hover:bg-[#E31C5F] transition">
-            Reserve
-          </button>
+        <button
+          onClick={async () => {
+          try {
+            if (!user) return toast.error("Please log in first");
+
+            const check_in = format(range[0].startDate, "yyyy-MM-dd");
+            const check_out = format(range[0].endDate, "yyyy-MM-dd");
+            const total_price = total;
+
+            await api.post("/bookings", {
+              property_id: property.id,
+              user_id: user.id,
+              check_in,
+              check_out,
+              total_price,
+            });
+
+            toast.success("Booking confirmed!");
+          } catch (err) {
+            if (err.response?.status === 401) return toast.error("Please log in first");
+            if (err.response?.status === 409) return toast.error("These dates are already booked.");
+            toast.error("Failed to book property.");
+            console.error(err);
+          }
+        }}
+
+          className="mt-3 w-full bg-airbnb-red text-white rounded-full py-2 hover:bg-[#E31C5F] transition"
+        >
+          Reserve
+        </button>
+
         </div>
       </div>
 
@@ -209,8 +241,7 @@ export default function PropertyDetails() {
           <button
             onClick={async () => {
               try {
-                const user = JSON.parse(localStorage.getItem("user"));
-                if (!user) return toast.error("Login required");
+                if (!user) return toast.error("Please log in first");
                 await api.post("/reviews", {
                   property_id: property.id,
                   user_id: user.id,

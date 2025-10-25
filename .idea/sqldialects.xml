@@ -5,6 +5,8 @@
     <file url="file://$PROJECT_DIR$/Backend/src/models/Favorite.js" dialect="GenericSQL" />
     <file url="file://$PROJECT_DIR$/Backend/src/models/Property.js" dialect="GenericSQL" />
     <file url="file://$PROJECT_DIR$/Backend/src/models/User.js" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/Backend/src/routes/bookings.js" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/Backend/src/routes/owner.js" dialect="GenericSQL" />
     <file url="file://$PROJECT_DIR$/Backend/src/routes/property.routes.js" dialect="GenericSQL" />
     <file url="file://$PROJECT_DIR$/Backend/src/routes/reviews.js" dialect="GenericSQL" />
   </component>

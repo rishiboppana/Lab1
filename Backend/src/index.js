@@ -11,9 +11,10 @@ import { errorHandler } from './middleware/error.js';
 import authRoutes from './routes/auth.routes.js';
 import profileRoutes from './routes/profile.routes.js';
 import propertyRoutes from './routes/property.routes.js';
-import bookingRoutes from './routes/booking.routes.js';
+// import bookingRoutes from './routes/booking.routes.js';
 import favoriteRoutes from './routes/favorite.routes.js';
 import reviewRoutes from "./routes/reviews.js";
+import bookingRoutes from "./routes/bookings.js";
 
 // get __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -53,6 +54,8 @@ app.use('/api/properties', propertyRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use("/api/location", locationRoutes);
+app.use("/api/bookings", bookingRoutes);
+
 // health check
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 

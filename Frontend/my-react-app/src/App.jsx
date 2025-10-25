@@ -16,7 +16,7 @@ import Bookings from "./pages/Bookings";
 import Favorites from "./pages/Favorites";
 import Profile from "./pages/Profile";
 import Owner from "./pages/Owner";
-
+import MyTrips from "./pages/MyTrips.jsx"
 /* ---------- Guarded route helper ---------- */
 function Protected({ children }) {
   const { user } = useAuth();
@@ -47,7 +47,7 @@ export default function App() {
           <Route path="/favorites" element={<Protected><Favorites /></Protected>} />
           <Route path="/profile" element={<Protected><Profile /></Protected>} />
           <Route path="/owner" element={<Protected><Owner /></Protected>} />
-
+          <Route path="/my-trips" element={<MyTrips />} />
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
