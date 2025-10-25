@@ -88,8 +88,6 @@ r.get("/:id", async (req, res) => {
   }
 });
 
-/* ---------------------- OWNER-ONLY ROUTES ---------------------- */
-
 r.use(requireAuth, requireOwner);
 
 //  Add new property (handles image upload)
@@ -98,7 +96,7 @@ r.post("/", requireAuth, upload.array("images", 5), async (req, res) => {
     const user = req.session.user;
     if (!user) return res.status(401).json({ error: "Not logged in" });
 
-    // ✅ 1️⃣ If the user is not an owner, promote them automatically
+    // If the user is not an owner, promote them automatically
     if (user.role !== "owner") {
       await db.query("UPDATE users SET role='owner' WHERE id=?", [user.id]);
       user.role = "owner";
@@ -106,7 +104,7 @@ r.post("/", requireAuth, upload.array("images", 5), async (req, res) => {
       console.log(`User ${user.id} promoted to owner.`);
     }
 
-    // ✅ 2️⃣ Extract form data
+    //Extract form data
     const {
       title,
       type,
@@ -131,7 +129,7 @@ r.post("/", requireAuth, upload.array("images", 5), async (req, res) => {
       (req.files || []).map((f) => `/uploads/${f.filename}`)
     );
 
-    // ✅ 3️⃣ Insert into DB
+    // Insert into DB
     await db.query(
       `
       INSERT INTO properties
@@ -155,7 +153,7 @@ r.post("/", requireAuth, upload.array("images", 5), async (req, res) => {
 
     res.json({ message: "Property added successfully!" });
   } catch (err) {
-    console.error("🔥 Error creating property:", err);
+    console.error(" Error creating property:", err);
     res.status(500).json({ error: "Failed to create property" });
   }
 });
@@ -174,10 +172,10 @@ r.put("/:id", requireAuth, upload.array("images", 5), async (req, res) => {
       bathrooms,
       amenities,
       imageAction,
-      existingImages, // ✅ NEW: Images user wants to keep
+      existingImages, //  NEW: Images user wants to keep
     } = req.body;
 
-    // ✅ Fetch existing property
+    // Fetch existing property
     const [rows] = await db.query("SELECT * FROM properties WHERE id = ?", [id]);
     if (!rows.length) {
       return res.status(404).json({ error: "Property not found" });
@@ -185,12 +183,12 @@ r.put("/:id", requireAuth, upload.array("images", 5), async (req, res) => {
 
     const existing = rows[0];
 
-    // ✅ Check ownership
+    // Check ownership
     if (existing.owner_id !== req.session.user?.id) {
       return res.status(403).json({ error: "Not authorized" });
     }
 
-    // ✅ Parse existing images that user wants to keep
+    // Parse existing images that user wants to keep
     let keptImages = [];
     if (existingImages) {
       try {
@@ -200,7 +198,7 @@ r.put("/:id", requireAuth, upload.array("images", 5), async (req, res) => {
       }
     }
 
-    // ✅ Parse old amenities
+    // Parse old amenities
     let oldAmenities = [];
     try {
       if (existing.amenities) {
@@ -210,13 +208,13 @@ r.put("/:id", requireAuth, upload.array("images", 5), async (req, res) => {
       oldAmenities = [];
     }
 
-    // ✅ Handle NEW images with 5-image limit
+    // Handle NEW images with 5-image limit
     let finalImages = keptImages; // Default: use kept images from frontend
 
     if (req.files && req.files.length > 0) {
       const newImages = req.files.map((f) => `/uploads/${f.filename}`);
 
-      // ✅ Validate: uploaded files should not exceed 5
+      // Validate: uploaded files should not exceed 5
       if (newImages.length > 5) {
         return res.status(400).json({
           error: "Cannot upload more than 5 images at once"
@@ -231,7 +229,7 @@ r.put("/:id", requireAuth, upload.array("images", 5), async (req, res) => {
         // Add to kept images
         const combined = [...keptImages, ...newImages];
 
-        // ✅ Validate: total should not exceed 5
+        // Validate: total should not exceed 5
         if (combined.length > 5) {
           return res.status(400).json({
             error: `Cannot have more than 5 images total. You have ${keptImages.length} existing images, so you can only add ${5 - keptImages.length} more.`
@@ -243,30 +241,30 @@ r.put("/:id", requireAuth, upload.array("images", 5), async (req, res) => {
       }
     }
 
-    // ✅ Validate: must have at least 1 image
+    // Validate: must have at least 1 image
     if (finalImages.length === 0) {
       return res.status(400).json({
         error: "Property must have at least 1 image"
       });
     }
 
-    // ✅ Final validation: ensure we never exceed 5 images
+    //  Final validation: ensure we never exceed 5 images
     if (finalImages.length > 5) {
       return res.status(400).json({
         error: "Cannot have more than 5 images for a property"
       });
     }
 
-    console.log("📸 Final images count:", finalImages.length);
-    console.log("📸 Final images:", finalImages);
+    console.log(" Final images count:", finalImages.length);
+    console.log(" Final images:", finalImages);
 
-    // ✅ Handle amenities
+    //  Handle amenities
     let amenityList = oldAmenities;
     if (typeof amenities === "string" && amenities.trim()) {
       amenityList = amenities.split(",").map((a) => a.trim()).filter(Boolean);
     }
 
-    // ✅ Build update object
+    // Build update object
     const updated = {
       title: title || existing.title,
       type: type || existing.type,
@@ -279,7 +277,7 @@ r.put("/:id", requireAuth, upload.array("images", 5), async (req, res) => {
       images: JSON.stringify(finalImages),
     };
 
-    // ✅ Update database
+    //  Update database
     await db.query(
       `UPDATE properties
        SET title=?, type=?, location=?, description=?, price_per_night=?,
@@ -300,12 +298,12 @@ r.put("/:id", requireAuth, upload.array("images", 5), async (req, res) => {
     );
 
     res.json({
-      message: "✅ Property updated successfully",
+      message: " Property updated successfully",
       property: updated
     });
 
   } catch (err) {
-    console.error("🔥 ERROR:", err);
+    console.error("ERROR:", err);
     res.status(500).json({
       error: "Failed to update property",
       details: err.message
