@@ -17,6 +17,7 @@ export async function signup(req, res) {
 export async function login(req, res) {
   const { email, password } = req.body;
   const u = await User.findByEmail(email);
+  console.log("Session user:", req.session.user);
   if (!u) return res.status(401).json({ error: 'Invalid credentials' });
   const ok = await bcrypt.compare(password, u.password_hash);
   if (!ok) return res.status(401).json({ error: 'Invalid credentials' });

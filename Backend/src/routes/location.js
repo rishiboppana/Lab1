@@ -1,17 +1,35 @@
-import express from "express";
-import fetch from "node-fetch";   // if using Node 18+, global fetch works too
-const router = express.Router();
+import { Router } from "express";
+import fetch from "node-fetch";
 
-// GET /api/location
-router.get("/", async (req, res) => {
+const r = Router();
+
+r.get("/", async (_req, res) => {
   try {
-    const geoRes = await fetch("https://ipapi.co/json/");
-    const data = await geoRes.json();
-    res.json({ city: data.city, country: data.country_name });
+    const response = await fetch("https://ipinfo.io/json?token=<your_free_token>");
+    const text = await response.text();
+
+    let data = {};
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error("Non-JSON from ipinfo:", text.slice(0, 80));
+      return res.json({ city: "your area" });
+    }
+
+    res.json({ city: data.city || "your area" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ city: "your area" });
+    console.error("Location fetch failed:", err);
+    res.json({ city: "your area" });
   }
 });
 
-export default router;
+export default r;
+// import { Router } from "express";
+// const r = Router();
+//
+// // Stable dev fallback — no external API, no rate limits
+// r.get("/", (_req, res) => {
+//   res.json({ city: "your area" });
+// });
+//
+// export default r;

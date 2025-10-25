@@ -141,9 +141,12 @@ r.post("/", upload.array("images", 5), async (req, res) => {
   }
 });
 
-//  Update property (with optional new images)
+/* ---------- UPDATE PROPERTY ---------- */
 r.put("/:id", upload.array("images", 5), async (req, res) => {
   try {
+    const id = req.params.id;
+
+    // destructure request body
     const {
       title,
       type,
@@ -155,48 +158,84 @@ r.put("/:id", upload.array("images", 5), async (req, res) => {
       amenities,
     } = req.body;
 
-    const amenityList =
-      typeof amenities === "string"
-        ? amenities.split(",").map((a) => a.trim())
-        : [];
+    // ✅ Step 1: fetch existing property
+    const [rows] = await db.query("SELECT * FROM properties WHERE id = ?", [id]);
+    if (!rows.length) return res.status(404).json({ error: "Property not found" });
 
-    const imagePaths = req.files.length
-      ? JSON.stringify(req.files.map((f) => `/uploads/${f.filename}`))
-      : null;
+    const existing = rows[0];
 
-    const sql = `
-      UPDATE properties
-         SET title = ?,
-             type = ?,
-             location = ?,
-             description = ?,
-             price_per_night = ?,
-             bedrooms = ?,
-             bathrooms = ?,
-             amenities = ?
-         ${imagePaths ? ", images = ?" : ""}
-       WHERE id = ?
-    `;
+    // ✅ Step 2: safely parse old images and amenities
+    let oldImages = [];
+    let oldAmenities = [];
 
-    const params = [
-      title,
-      type,
-      location,
-      description,
-      price_per_night,
-      bedrooms,
-      bathrooms,
-      JSON.stringify(amenityList),
-    ];
+    try {
+      if (existing.images) oldImages = JSON.parse(existing.images);
+    } catch {
+      oldImages = [];
+    }
+    try {
+      if (existing.amenities) oldAmenities = JSON.parse(existing.amenities);
+    } catch {
+      oldAmenities = [];
+    }
 
-    if (imagePaths) params.push(imagePaths);
-    params.push(req.params.id);
+    // ✅ Step 3: process new uploads (if any)
+    let newImages = [];
+    if (req.files && req.files.length > 0) {
+      newImages = req.files.map((f) => `/uploads/${f.filename}`);
+    }
 
-    await db.query(sql, params);
+    // ✅ Step 4: decide final image array
+    // If new images uploaded, merge them; otherwise keep old images.
+    const finalImages =
+      newImages.length > 0 ? [...oldImages, ...newImages] : oldImages;
 
-    res.json({ message: "Property updated successfully" });
+    // ✅ Step 5: handle amenities
+    let amenityList = [];
+    if (typeof amenities === "string" && amenities.trim()) {
+      amenityList = amenities.split(",").map((a) => a.trim());
+    } else {
+      amenityList = oldAmenities;
+    }
+
+    // ✅ Step 6: build final merged object
+    const updated = {
+      title: title?.trim() || existing.title,
+      type: type?.trim() || existing.type,
+      location: location?.trim() || existing.location,
+      description: description?.trim() || existing.description,
+      price_per_night: price_per_night || existing.price_per_night,
+      bedrooms: bedrooms || existing.bedrooms,
+      bathrooms: bathrooms || existing.bathrooms,
+      amenities: JSON.stringify(amenityList),
+      images: JSON.stringify(finalImages),
+    };
+
+    console.log("🖼️ Final images:", updated.images);
+
+    // ✅ Step 7: update database safely
+    await db.query(
+      `UPDATE properties
+         SET title=?, type=?, location=?, description=?, price_per_night=?,
+             bedrooms=?, bathrooms=?, amenities=?, images=?
+       WHERE id=?`,
+      [
+        updated.title,
+        updated.type,
+        updated.location,
+        updated.description,
+        updated.price_per_night,
+        updated.bedrooms,
+        updated.bathrooms,
+        updated.amenities,
+        updated.images,
+        id,
+      ]
+    );
+
+    res.json({ message: "✅ Property updated successfully" });
   } catch (err) {
-    console.error("Error updating property:", err);
+    console.error("🔥 Error updating property:", err);
     res.status(500).json({ error: "Failed to update property" });
   }
 });
@@ -213,8 +252,12 @@ r.delete("/:id", async (req, res) => {
 });
 
 //  List all properties by owner
-r.get("/owner/list/:ownerId", async (req, res) => {
+// List all properties owned by the logged-in user
+r.get("/owner/list", async (req, res) => {
   try {
+    const ownerId = req.session.user?.id;
+    if (!ownerId) return res.status(401).json({ error: "Unauthorized" });
+
     const [rows] = await db.query(
       `
       SELECT p.*,
@@ -226,7 +269,7 @@ r.get("/owner/list/:ownerId", async (req, res) => {
        GROUP BY p.id
        ORDER BY p.created_at DESC
     `,
-      [req.params.ownerId]
+      [ownerId]
     );
     res.json({ properties: rows });
   } catch (err) {

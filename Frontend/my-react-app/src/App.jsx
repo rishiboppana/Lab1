@@ -20,6 +20,7 @@ import Profile from "./pages/Profile";
 import Owner from "./pages/Owner";
 import MyTrips from "./pages/MyTrips.jsx"
 import AddProperty from "./pages/AddProperty";
+import EditProperty from "./pages/EditProperty";
 
 
 /* ---------- Guarded route helper ---------- */
@@ -55,6 +56,13 @@ export default function App() {
           <Route path="/my-trips" element={<MyTrips />} />
           <Route path="/owner" element={<OwnerDashboard />} />
           <Route path="/add-property" element={<AddProperty />} />
+          <Route path="/owner" element={<Owner />} />
+          <Route path="/owner" element={<OwnerDashboard />} />
+          <Route path="/edit-property/:id"
+             element={
+                <Protected>
+                  <EditProperty />
+                </Protected> } />
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
