@@ -8,3 +8,6 @@ export const pool = mysql.createPool({
   database: ENV.DB_NAME,
   connectionLimit: 10
 });
+
+
+export default pool

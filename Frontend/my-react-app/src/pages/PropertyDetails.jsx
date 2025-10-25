@@ -1,78 +1,107 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
 import { api } from "../api/axios";
-import DatePicker from "react-datepicker";
+import { Star } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function PropertyDetails() {
-  const { id } = useParams();
-  const [payload, setPayload] = useState(null);
-  const [startDate, setStart] = useState(null);
-  const [endDate, setEnd] = useState(null);
-  const [guests, setGuests] = useState(1);
+  const [property, setProperty] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [newReview, setNewReview] = useState({ rating: 5, comment: "" });
 
-  useEffect(() => { api.get(`/properties/${id}`).then(r=>setPayload(r.data)); }, [id]);
-  if (!payload) return null;
+useEffect(() => {
+  const id = window.location.pathname.split("/").pop();
+  api.get(`/properties/${id}`).then((res) => {
+    const p = res.data.property;
+    try {
+      p.images = typeof p.images === "string" ? JSON.parse(p.images) : p.images;
+    } catch {}
+    setProperty(p);
+  });
+  api.get(`/reviews/${id}`).then((res) => setReviews(res.data.reviews));
+}, []);
 
-  const p = payload.property;
-  const imgs = safeImgs(p.images);
-  const hero = imgs[0] ? `http://localhost:4000${imgs[0]}` : "https://placehold.co/1200x600";
-  const thumbs = imgs.slice(1,5).map(u => `http://localhost:4000${u}`);
-
-  async function book() {
-    if (!startDate || !endDate) return alert("Pick dates first.");
-    await api.post("/bookings", {
-      property_id: +id,
-      start_date: startDate.toISOString().slice(0,10),
-      end_date: endDate.toISOString().slice(0,10),
-      guests
-    });
-    alert("Booking requested!");
+  async function submitReview() {
+    try {
+      const user = JSON.parse(localStorage.getItem("user")); // simple auth context
+      if (!user) return toast.error("Login required");
+      await api.post("/reviews", {
+        property_id: property.id,
+        user_id: user.id,
+        rating: newReview.rating,
+        comment: newReview.comment,
+      });
+      toast.success("Review added!");
+      setNewReview({ rating: 5, comment: "" });
+      const { data } = await api.get(`/reviews/${property.id}`);
+      setReviews(data.reviews);
+    } catch {
+      toast.error("Failed to post review");
+    }
   }
 
-  return (
-    <div className="max-w-6xl mx-auto px-4">
-      {/* Gallery */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-        <img src={hero} className="md:col-span-2 row-span-2 h-80 w-full object-cover rounded-xl" />
-        {thumbs.map((t,i)=>(
-          <img key={i} src={t} className="h-39 w-full object-cover rounded-xl" />
-        ))}
-      </div>
+  if (!property) return null;
+  const stars = Array.from({ length: 5 });
 
-      <div className="mt-6 flex flex-col md:flex-row gap-8">
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold">{p.title}</h1>
-          <div className="text-gray-600">{p.location}</div>
-          <div className="mt-4 space-y-2">
-            <div className="text-sm text-gray-700">Bedrooms: {p.bedrooms || 1} · Bathrooms: {p.bathrooms || 1}</div>
-            <p>{p.description}</p>
-          </div>
+  return (
+    <div className="max-w-5xl mx-auto px-4">
+      {/* existing property info above… */}
+
+      <section className="mt-10 border-t pt-6">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          <Star className="text-airbnb-red" /> Reviews
+        </h2>
+
+        <div className="space-y-4 mt-4">
+          {reviews.map((r) => (
+            <div key={r.id} className="border-b pb-3">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{r.user_name}</span>
+                <span className="text-sm text-gray-500">
+                  {"★".repeat(r.rating)}
+                </span>
+              </div>
+              <p className="text-sm mt-1">{r.comment}</p>
+              <p className="text-xs text-gray-400 mt-1">
+                {new Date(r.created_at).toLocaleDateString()}
+              </p>
+            </div>
+          ))}
+          {reviews.length === 0 && (
+            <p className="text-gray-500 text-sm">No reviews yet.</p>
+          )}
         </div>
 
-        {/* Sticky booking card */}
-        <aside className="w-full md:w-96">
-          <div className="border rounded-2xl p-4 sticky top-24" style={{boxShadow:"var(--air-shadow)"}}>
-            <div className="flex items-end justify-between">
-              <div><span className="text-2xl font-semibold">${p.price_per_night}</span> <span className="text-gray-600">night</span></div>
-              <div className="text-sm">⭐ 4.9 · 120 reviews</div>
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <DatePicker selected={startDate} onChange={setStart} selectsStart startDate={startDate} endDate={endDate} placeholderText="Check in" className="border p-2 rounded"/>
-              <DatePicker selected={endDate} onChange={setEnd} selectsEnd startDate={startDate} endDate={endDate} minDate={startDate} placeholderText="Check out" className="border p-2 rounded"/>
-              <input type="number" min={1} value={guests} onChange={e=>setGuests(+e.target.value)} className="border p-2 rounded col-span-2" placeholder="Guests"/>
-            </div>
-            <button onClick={book} className="w-full bg-red-500 text-white py-3 rounded-xl mt-3">Request to book</button>
-          </div>
-        </aside>
-      </div>
+        <div className="mt-6">
+          <h3 className="font-medium mb-2">Leave a review</h3>
+          <select
+            value={newReview.rating}
+            onChange={(e) =>
+              setNewReview({ ...newReview, rating: parseInt(e.target.value) })
+            }
+            className="border rounded px-2 py-1 mr-2"
+          >
+            {stars.map((_, i) => (
+              <option key={i} value={5 - i}>
+                {5 - i} stars
+              </option>
+            ))}
+          </select>
+          <textarea
+            placeholder="Share your experience..."
+            className="border rounded w-full p-2 mt-2"
+            value={newReview.comment}
+            onChange={(e) =>
+              setNewReview({ ...newReview, comment: e.target.value })
+            }
+          />
+          <button
+            onClick={submitReview}
+            className="mt-2 bg-airbnb-red text-white px-4 py-2 rounded-full hover:bg-[#E31C5F]"
+          >
+            Submit
+          </button>
+        </div>
+      </section>
     </div>
   );
-}
-
-function safeImgs(images){
-  try {
-    if (Array.isArray(images)) return images;
-    if (typeof images === "string") return JSON.parse(images || "[]");
-    return [];
-  } catch { return []; }
 }
