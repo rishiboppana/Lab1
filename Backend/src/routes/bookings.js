@@ -2,7 +2,7 @@ import express from "express";
 import db from "../config/db.js";
 const router = express.Router();
 
-// Create new booking
+// ✅ Create new booking
 router.post("/", async (req, res) => {
   const { property_id, user_id, check_in, check_out, total_price } = req.body;
 
@@ -26,7 +26,7 @@ router.post("/", async (req, res) => {
   res.json({ message: "Booking created successfully" });
 });
 
-// Get bookings for a user
+// ✅ Get bookings for a user
 router.get("/user/:userId", async (req, res) => {
   const [rows] = await db.query(
     `SELECT b.*, p.title, p.location, p.images

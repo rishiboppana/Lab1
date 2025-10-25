@@ -11,16 +11,21 @@ export default function Login() {
   const [error, setError] = useState("");
 
   async function handleLogin(e) {
-    e.preventDefault();
-    try {
-      const { data } = await api.post("/auth/login", { email, password },{ withCredentials: true });
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-      setUser(data.user);
-      navigate("/");
-    } catch (err) {
-      setError(err.response?.data?.error || "Invalid credentials");
-    }
+  e.preventDefault();
+  try {
+    const { data } = await api.post(
+      "/auth/login",
+      { email, password },
+      { withCredentials: true }
+    );
+    localStorage.setItem("user", JSON.stringify(data.user));
+    setUser(data.user);
+    navigate("/");
+  } catch (err) {
+    console.error("Login error:", err);
+    setError(err.response?.data?.error || "Invalid credentials");
   }
+}
 
   return (
     <div className="fixed inset-0 bg-black/40 grid place-items-center z-50">
