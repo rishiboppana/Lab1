@@ -93,10 +93,21 @@ r.get("/:id", async (req, res) => {
 r.use(requireAuth, requireOwner);
 
 //  Add new property (handles image upload)
-r.post("/", upload.array("images", 5), async (req, res) => {
+r.post("/", requireAuth, upload.array("images", 5), async (req, res) => {
   try {
+    const user = req.session.user;
+    if (!user) return res.status(401).json({ error: "Not logged in" });
+
+    // ✅ 1️⃣ If the user is not an owner, promote them automatically
+    if (user.role !== "owner") {
+      await db.query("UPDATE users SET role='owner' WHERE id=?", [user.id]);
+      user.role = "owner";
+      req.session.user.role = "owner";
+      console.log(`User ${user.id} promoted to owner.`);
+    }
+
+    // ✅ 2️⃣ Extract form data
     const {
-      owner_id,
       title,
       type,
       location,
@@ -107,40 +118,47 @@ r.post("/", upload.array("images", 5), async (req, res) => {
       amenities,
     } = req.body;
 
-    const imagePaths = req.files.map((f) => `uploads/${f.filename}`);
-    const amenityList =
-      typeof amenities === "string"
-        ? amenities.split(",").map((a) => a.trim())
-        : [];
+    const amenityList = amenities
+      ? JSON.stringify(
+          amenities
+            .split(",")
+            .map((a) => a.trim())
+            .filter((a) => a)
+        )
+      : "[]";
 
+    const imagePaths = JSON.stringify(
+      (req.files || []).map((f) => `/uploads/${f.filename}`)
+    );
+
+    // ✅ 3️⃣ Insert into DB
     await db.query(
       `
       INSERT INTO properties
         (owner_id, title, type, location, description, price_per_night,
-         bedrooms, bathrooms, amenities, images)
-       VALUES (?,?,?,?,?,?,?,?,?,?)
+         bedrooms, bathrooms, amenities, images, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     `,
       [
-        owner_id,
+        user.id,
         title,
         type,
         location,
         description,
         price_per_night,
-        bedrooms,
-        bathrooms,
-        JSON.stringify(amenityList),
-        JSON.stringify(imagePaths),
+        bedrooms || null,
+        bathrooms || null,
+        amenityList,
+        imagePaths,
       ]
     );
 
-    res.json({ message: "Property added successfully" });
+    res.json({ message: "Property added successfully!" });
   } catch (err) {
-    console.error("Error creating property:", err);
+    console.error("🔥 Error creating property:", err);
     res.status(500).json({ error: "Failed to create property" });
   }
 });
-
 /* ---------- UPDATE PROPERTY ---------- */
 r.put("/:id", requireAuth, upload.array("images", 5), async (req, res) => {
   try {

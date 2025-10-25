@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import FavoriteButton from "./FavoriteButton";
 import { Star } from "lucide-react";
+import { Heart} from "lucide-react"
 
 export default function PropertyCard({ p }) {
     let imgs = [];
@@ -24,12 +25,30 @@ export default function PropertyCard({ p }) {
       transition={{ type: "spring", stiffness: 250, damping: 18 }}
       className="group relative cursor-pointer"
     >
-      <Link to={`/property/${p.id}`} className="block overflow-hidden rounded-2xl bg-airbnb-light">
+      <Link
+          to={`/property/${p.id}`}
+          className="block relative overflow-hidden rounded-2xl bg-gray-100"
+        >
+          <FavoriteButton
+            propertyId={p.id}
+            className="absolute top-3 right-3 z-10"
+          />
         <img
-          src={cover}
+           src={
+            Array.isArray(p.images)
+              ? p.images[0]
+              : (() => {
+                  try {
+                    const imgs = JSON.parse(p.images || "[]");
+                    return imgs[0];
+                  } catch {
+                    return p.images;
+                  }
+                })()
+          }
           alt={p.title}
           onError={handleImgError}
-          className="aspect-[4/3] w-full object-cover rounded-2xl transition-transform duration-300 group-hover:scale-105"
+          className="w-full h-64 object-cover rounded-2xl transition-transform duration-300 group-hover:scale-105"
         />
         <FavoriteButton propertyId={p.id}
                         className="absolute top-3 right-3 text-white text-2xl drop-shadow-lg hover:scale-110 transition" />

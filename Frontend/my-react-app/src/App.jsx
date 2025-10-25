@@ -21,7 +21,7 @@ import Owner from "./pages/Owner";
 import MyTrips from "./pages/MyTrips.jsx"
 import AddProperty from "./pages/AddProperty";
 import EditProperty from "./pages/EditProperty";
-
+import Wishlist from "./pages/Wishlist";
 
 /* ---------- Guarded route helper ---------- */
 function Protected({ children }) {
@@ -63,6 +63,7 @@ export default function App() {
                 <Protected>
                   <EditProperty />
                 </Protected> } />
+          <Route path="/wishlist" element={<Protected><Wishlist /></Protected>} />
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

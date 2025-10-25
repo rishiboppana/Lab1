@@ -2,7 +2,9 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useRef, useState } from "react";
-import { Globe, Menu, User } from "lucide-react"; // icons
+import { Globe, Menu, User } from "lucide-react";
+import toast from "react-hot-toast";
+import {api} from "../api/axios.js"; // icons
 
 export default function Header() {
   const { user, setUser } = useAuth();
@@ -26,6 +28,16 @@ export default function Header() {
     setUser(null);
     navigate("/login");
   }
+  async function handleBecomeHost() {
+    try {
+      const { data } = await api.post("/auth/become-host", {}, { withCredentials: true });
+      setUser(data.user); // update context
+      toast.success(" You are now a host!");
+      navigate("/post"); // redirect to Post Property page
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to become host");
+    }
+  }
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b">
@@ -37,12 +49,11 @@ export default function Header() {
         <SearchPill />
 
         <div className="flex items-center gap-4">
-          <Link
-            to="/post"
-            className="hidden md:block text-sm font-medium hover:bg-gray-100 px-3 py-2 rounded-full"
-          >
-            Become a host
-          </Link>
+          <button
+                onClick={handleBecomeHost}
+                className="text-[#4f46e5] font-medium hover:underline">
+                Become a host
+              </button>
           <button className="hidden md:grid place-items-center w-9 h-9 rounded-full hover:bg-gray-100">
             <Globe size={18} />
           </button>

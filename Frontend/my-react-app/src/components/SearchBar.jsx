@@ -1,63 +1,113 @@
 import { useState } from "react";
-import DatePicker from "react-datepicker";
+import { DateRange } from "react-date-range";
+import { Search } from "lucide-react";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
 
 export default function SearchBar({ onSearch }) {
-  const [location, setLocation] = useState("");
-  const [startDate, setStart] = useState(null);
-  const [endDate, setEnd] = useState(null);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [showGuests, setShowGuests] = useState(false);
+  const [searchText, setSearchText] = useState("");
   const [guests, setGuests] = useState(1);
+  const [range, setRange] = useState([
+    { startDate: new Date(), endDate: new Date(), key: "selection" },
+  ]);
 
-  function submit(e) {
-    e.preventDefault();
+  const handleSearch = () => {
     onSearch({
-      location: location || undefined,
-      startDate: startDate ? startDate.toISOString().slice(0, 10) : undefined,
-      endDate: endDate ? endDate.toISOString().slice(0, 10) : undefined,
+      location: searchText,
+      startDate: range[0].startDate,
+      endDate: range[0].endDate,
       guests,
     });
-  }
+  };
 
   return (
-    <form
-      onSubmit={submit}
-      className="flex flex-wrap items-center gap-2 border rounded-full px-4 py-2 shadow-sm hover:shadow-md transition bg-white"
-      style={{ boxShadow: "var(--air-shadow)" }}
-    >
-      <input
-        className="flex-1 outline-none px-2 py-1 text-sm"
-        placeholder="Where to?"
-        value={location}
-        onChange={(e) => setLocation(e.target.value)}
-      />
-      <DatePicker
-        selected={startDate}
-        onChange={setStart}
-        selectsStart
-        startDate={startDate}
-        endDate={endDate}
-        placeholderText="Check in"
-        className="border-none outline-none text-sm"
-      />
-      <DatePicker
-        selected={endDate}
-        onChange={setEnd}
-        selectsEnd
-        startDate={startDate}
-        endDate={endDate}
-        minDate={startDate}
-        placeholderText="Check out"
-        className="border-none outline-none text-sm"
-      />
-      <input
-        type="number"
-        min={1}
-        value={guests}
-        onChange={(e) => setGuests(+e.target.value)}
-        className="w-16 border-none outline-none text-sm"
-      />
-      <button className="bg-airbnb-red text-white px-4 py-2 rounded-full text-sm font-semibold">
-        Search
-      </button>
-    </form>
+    <div className="w-full flex justify-center">
+      <div
+        className="relative flex items-center w-[720px] bg-white border border-gray-200 shadow-lg
+                   rounded-full py-2 px-3 hover:shadow-xl transition duration-200"
+      >
+        {/* Where */}
+        <div className="flex-1 px-4 border-r">
+          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+            Where
+          </p>
+          <input
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            placeholder="Search destinations"
+            className="w-full text-sm text-gray-800 outline-none bg-transparent"
+          />
+        </div>
+
+        {/* When */}
+        <div
+          className="flex-1 px-4 border-r cursor-pointer"
+          onClick={() => setShowCalendar(!showCalendar)}
+        >
+          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+            When
+          </p>
+          <p className="text-sm text-gray-800">
+            {showCalendar
+              ? `${range[0].startDate.toLocaleDateString()} - ${range[0].endDate.toLocaleDateString()}`
+              : "Add dates"}
+          </p>
+        </div>
+
+        {/* Who */}
+        <div
+          className="flex-1 px-4 cursor-pointer"
+          onClick={() => setShowGuests(!showGuests)}
+        >
+          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+            Who
+          </p>
+          <p className="text-sm text-gray-800">{guests} guest(s)</p>
+        </div>
+
+        {/* Search button */}
+        <button
+          onClick={handleSearch}
+          className="absolute right-2 bg-[#FF385C] hover:bg-[#E31C5F] text-white rounded-full p-3 flex items-center justify-center shadow-md"
+        >
+          <Search size={18} />
+        </button>
+
+        {/* Date Picker Popup */}
+        {showCalendar && (
+          <div className="absolute top-[70px] left-0 bg-white rounded-2xl shadow-2xl z-50">
+            <DateRange
+              ranges={range}
+              onChange={(item) => setRange([item.selection])}
+              rangeColors={["#FF385C"]}
+            />
+          </div>
+        )}
+
+        {/* Guests Popup */}
+        {showGuests && (
+          <div className="absolute top-[70px] right-0 bg-white rounded-2xl shadow-2xl p-4 w-56 z-50">
+            <p className="font-semibold mb-2">Guests</p>
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => setGuests(Math.max(1, guests - 1))}
+                className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-lg"
+              >
+                −
+              </button>
+              <span className="text-lg">{guests}</span>
+              <button
+                onClick={() => setGuests(guests + 1)}
+                className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-lg"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
