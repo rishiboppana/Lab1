@@ -53,10 +53,18 @@ export default function EditProperty() {
     e.preventDefault();
     try {
       const data = new FormData();
-        Object.entries(form).forEach(([key, value]) => {
-          data.append(key, value ?? "");
-        });
-        if (newImages.length) {
+        // Object.entries(form).forEach(([key, value]) => {
+        //   data.append(key, value ?? "");
+        // });
+          data.append('title', form.title || '');
+          data.append('type', form.type || '');
+          data.append('location', form.location || '');
+          data.append('description', form.description || '');
+          data.append('price_per_night', form.price_per_night || '');
+          data.append('bedrooms', form.bedrooms || '');
+          data.append('bathrooms', form.bathrooms || '');
+          data.append('amenities', form.amenities || '');
+        if (newImages.length > 0 ) {
           newImages.forEach((f) => data.append("images", f));
         }
 

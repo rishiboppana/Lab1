@@ -107,7 +107,7 @@ r.post("/", upload.array("images", 5), async (req, res) => {
       amenities,
     } = req.body;
 
-    const imagePaths = req.files.map((f) => `/uploads/${f.filename}`);
+    const imagePaths = req.files.map((f) => `uploads/${f.filename}`);
     const amenityList =
       typeof amenities === "string"
         ? amenities.split(",").map((a) => a.trim())
@@ -142,11 +142,18 @@ r.post("/", upload.array("images", 5), async (req, res) => {
 });
 
 /* ---------- UPDATE PROPERTY ---------- */
-r.put("/:id", upload.array("images", 5), async (req, res) => {
+r.put("/:id", requireAuth, upload.array("images", 5), async (req, res) => {
   try {
     const id = req.params.id;
 
-    // destructure request body
+    // ✅ DEBUG: Log everything
+    console.log("=" .repeat(50));
+    console.log("📝 UPDATE REQUEST FOR PROPERTY:", id);
+    console.log("📦 req.body:", req.body);
+    console.log("🖼️ req.files:", req.files);
+    console.log("📊 req.files length:", req.files?.length);
+    console.log("=" .repeat(50));
+
     const {
       title,
       type,
@@ -158,52 +165,80 @@ r.put("/:id", upload.array("images", 5), async (req, res) => {
       amenities,
     } = req.body;
 
-    // ✅ Step 1: fetch existing property
+    // ✅ Fetch existing property
     const [rows] = await db.query("SELECT * FROM properties WHERE id = ?", [id]);
-    if (!rows.length) return res.status(404).json({ error: "Property not found" });
+    if (!rows.length) {
+      return res.status(404).json({ error: "Property not found" });
+    }
 
     const existing = rows[0];
+    console.log("🏠 Existing property images:", existing.images);
 
-    // ✅ Step 2: safely parse old images and amenities
-    let oldImages = [];
-    let oldAmenities = [];
-
-    try {
-      if (existing.images) oldImages = JSON.parse(existing.images);
-    } catch {
-      oldImages = [];
+    // ✅ Check ownership
+    if (existing.owner_id !== req.session.user?.id) {
+      return res.status(403).json({ error: "Not authorized" });
     }
+
+    // ✅ Parse old images
+let oldImages = [];
+try {
+  if (existing.images) {
+    // Check if it's already an array or a JSON string
+    if (Array.isArray(existing.images)) {
+      oldImages = existing.images;
+    } else if (typeof existing.images === 'string') {
+      // Try to parse as JSON first
+      try {
+        oldImages = JSON.parse(existing.images);
+      } catch {
+        // If parsing fails, it might be a single image path
+        oldImages = [existing.images];
+      }
+    }
+    console.log("✅ Parsed old images:", oldImages);
+  }
+} catch (err) {
+  console.log("❌ Failed to parse old images:", err.message);
+  oldImages = [];
+}
+
+    // ✅ Parse old amenities
+    let oldAmenities = [];
     try {
-      if (existing.amenities) oldAmenities = JSON.parse(existing.amenities);
+      if (existing.amenities) {
+        oldAmenities = JSON.parse(existing.amenities);
+      }
     } catch {
       oldAmenities = [];
     }
 
-    // ✅ Step 3: process new uploads (if any)
-    let newImages = [];
+    // ✅ Handle NEW images
+    let finalImages = oldImages; // Default: keep old images
+
+    console.log("🔍 Checking for new uploads...");
+    console.log("   req.files exists?", !!req.files);
+    console.log("   req.files.length:", req.files?.length);
+
     if (req.files && req.files.length > 0) {
-      newImages = req.files.map((f) => `/uploads/${f.filename}`);
-    }
-
-    // ✅ Step 4: decide final image array
-    // If new images uploaded, merge them; otherwise keep old images.
-    const finalImages =
-      newImages.length > 0 ? [...oldImages, ...newImages] : oldImages;
-
-    // ✅ Step 5: handle amenities
-    let amenityList = [];
-    if (typeof amenities === "string" && amenities.trim()) {
-      amenityList = amenities.split(",").map((a) => a.trim());
+      const newImages = req.files.map((f) => `/uploads/${f.filename}`);
+      console.log("🆕 New images uploaded:", newImages);
+      finalImages = newImages; // Replace with new images
     } else {
-      amenityList = oldAmenities;
+      console.log("⏭️ No new images, keeping old ones:", oldImages);
     }
 
-    // ✅ Step 6: build final merged object
+    // ✅ Handle amenities
+    let amenityList = oldAmenities;
+    if (typeof amenities === "string" && amenities.trim()) {
+      amenityList = amenities.split(",").map((a) => a.trim()).filter(Boolean);
+    }
+
+    // ✅ Build update object
     const updated = {
-      title: title?.trim() || existing.title,
-      type: type?.trim() || existing.type,
-      location: location?.trim() || existing.location,
-      description: description?.trim() || existing.description,
+      title: title || existing.title,
+      type: type || existing.type,
+      location: location || existing.location,
+      description: description || existing.description,
       price_per_night: price_per_night || existing.price_per_night,
       bedrooms: bedrooms || existing.bedrooms,
       bathrooms: bathrooms || existing.bathrooms,
@@ -211,13 +246,13 @@ r.put("/:id", upload.array("images", 5), async (req, res) => {
       images: JSON.stringify(finalImages),
     };
 
-    console.log("🖼️ Final images:", updated.images);
+    console.log("💾 About to save images:", updated.images);
 
-    // ✅ Step 7: update database safely
+    // ✅ Update database
     await db.query(
       `UPDATE properties
-         SET title=?, type=?, location=?, description=?, price_per_night=?,
-             bedrooms=?, bathrooms=?, amenities=?, images=?
+       SET title=?, type=?, location=?, description=?, price_per_night=?,
+           bedrooms=?, bathrooms=?, amenities=?, images=?
        WHERE id=?`,
       [
         updated.title,
@@ -233,13 +268,22 @@ r.put("/:id", upload.array("images", 5), async (req, res) => {
       ]
     );
 
-    res.json({ message: "✅ Property updated successfully" });
+    console.log("✅ Property updated successfully!");
+    console.log("=" .repeat(50));
+
+    res.json({
+      message: "✅ Property updated successfully",
+      property: updated
+    });
+
   } catch (err) {
-    console.error("🔥 Error updating property:", err);
-    res.status(500).json({ error: "Failed to update property" });
+    console.error("🔥 ERROR:", err);
+    res.status(500).json({
+      error: "Failed to update property",
+      details: err.message
+    });
   }
 });
-
 // Delete property
 r.delete("/:id", async (req, res) => {
   try {
