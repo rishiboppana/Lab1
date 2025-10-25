@@ -73,8 +73,8 @@ export default function Header() {
                   </>
                 )}
                 {user?.role === "owner" && (
-                  <Link className="block px-4 py-3 hover:bg-gray-50" to="/owner">
-                    Owner dashboard
+                  <Link to="/owner" className="block px-4 py-3 hover:bg-gray-50">
+                    Owner Dashboard
                   </Link>
                 )}
                 {user && (

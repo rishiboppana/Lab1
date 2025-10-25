@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import AuthProvider, { useAuth } from "./context/AuthContext";
+import OwnerDashboard from "./pages/OwnerDashboard";
+
 
 // layout pieces
 import Header from "./components/Header";
@@ -48,6 +50,7 @@ export default function App() {
           <Route path="/profile" element={<Protected><Profile /></Protected>} />
           <Route path="/owner" element={<Protected><Owner /></Protected>} />
           <Route path="/my-trips" element={<MyTrips />} />
+          <Route path="/owner" element={<OwnerDashboard />} />
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
