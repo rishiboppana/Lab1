@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import { api } from "../api/axios";
 import { Star } from "lucide-react";
 import toast from "react-hot-toast";
+import { DateRange } from "react-date-range";
+import { addDays } from "date-fns";
 
 export default function PropertyDetails() {
   const { id } = useParams();
@@ -10,18 +12,37 @@ export default function PropertyDetails() {
   const [reviews, setReviews] = useState([]);
   const [newReview, setNewReview] = useState({ rating: 5, comment: "" });
 
+  const [range, setRange] = useState([
+    { startDate: new Date(), endDate: addDays(new Date(), 3), key: "selection" },
+  ]);
+
   useEffect(() => {
     async function fetchData() {
       try {
         const res = await api.get(`/properties/${id}`);
         const p = res.data.property;
 
-        // Parse image JSON safely
+        // ✅ Safely parse images and amenities
         try {
           p.images = typeof p.images === "string" ? JSON.parse(p.images) : p.images;
-        } catch {}
+        } catch {
+          p.images = [];
+        }
+
+        try {
+          p.amenities =
+            typeof p.amenities === "string" && p.amenities.startsWith("[")
+              ? JSON.parse(p.amenities)
+              : Array.isArray(p.amenities)
+              ? p.amenities
+              : (p.amenities || "").split(",").map((a) => a.trim());
+        } catch {
+          p.amenities = [];
+        }
+
         setProperty(p);
 
+        // ✅ Fetch reviews
         const rev = await api.get(`/reviews/${id}`);
         setReviews(rev.data.reviews);
       } catch (err) {
@@ -32,29 +53,45 @@ export default function PropertyDetails() {
     fetchData();
   }, [id]);
 
-  if (!property)
+  if (!property) {
     return (
-      <div className="text-center py-10 text-airbnb-gray">Loading property...</div>
+      <div className="text-center py-10 text-airbnb-gray">
+        Loading property details...
+      </div>
     );
+  }
 
-  const avg = property.avg_rating || "–";
-  const count = property.review_count || 0;
+  // ✅ Avoid null math
+  const nights =
+    (range[0].endDate - range[0].startDate) / (1000 * 60 * 60 * 24);
+  const total = nights * (property?.price_per_night ?? 0);
+
+  const avg = property.avg_rating ?? "–";
+  const count = property.review_count ?? 0;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 mt-6">
-      {/* ---------- Top Image Grid ---------- */}
+      {/* ---------- Image Gallery ---------- */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-2 rounded-2xl overflow-hidden">
-        {property.images?.slice(0, 5).map((img, i) => (
+        {property.images?.length ? (
+          property.images.slice(0, 5).map((img, i) => (
+            <img
+              key={i}
+              src={img.startsWith("http") ? img : `http://localhost:4000${img}`}
+              alt={property.title}
+              onError={(e) => (e.target.src = "https://placehold.co/600x400")}
+              className={`object-cover w-full h-64 ${
+                i === 0 ? "md:col-span-2 lg:col-span-2 h-96" : ""
+              }`}
+            />
+          ))
+        ) : (
           <img
-            key={i}
-            src={img.startsWith("http") ? img : `http://localhost:4000${img}`}
-            alt={property.title}
-            onError={(e) => (e.target.src = "https://placehold.co/600x400")}
-            className={`object-cover w-full h-64 ${
-              i === 0 ? "md:col-span-2 lg:col-span-2 h-96" : ""
-            }`}
+            src="https://placehold.co/600x400?text=No+Image"
+            alt="placeholder"
+            className="object-cover w-full h-96 rounded-2xl"
           />
-        ))}
+        )}
       </div>
 
       {/* ---------- Header Info ---------- */}
@@ -71,11 +108,29 @@ export default function PropertyDetails() {
           </div>
         </div>
 
-        <div className="border rounded-2xl p-4 shadow-sm text-center">
+        {/* ---------- Booking Box ---------- */}
+        <div className="border rounded-2xl p-4 shadow-sm text-center w-full md:w-[320px]">
           <p className="text-xl font-semibold text-airbnb-dark">
-            ${property.price_per_night}
+            ${property?.price_per_night ?? 0}
             <span className="text-sm text-gray-500"> / night</span>
           </p>
+
+          <DateRange
+            editableDateInputs={true}
+            onChange={(item) => setRange([item.selection])}
+            moveRangeOnFirstSelection={false}
+            ranges={range}
+            rangeColors={["#FF385C"]}
+            className="mt-2"
+          />
+
+          <p className="text-sm text-gray-600 mt-2">
+            {nights} night{nights !== 1 && "s"} • Total{" "}
+            <span className="font-semibold text-black">
+              ${total.toFixed(2)}
+            </span>
+          </p>
+
           <button className="mt-3 w-full bg-airbnb-red text-white rounded-full py-2 hover:bg-[#E31C5F] transition">
             Reserve
           </button>
@@ -87,36 +142,16 @@ export default function PropertyDetails() {
         <div className="md:col-span-2">
           <p className="text-gray-700 leading-relaxed">{property.description}</p>
 
-          {property.amenities && (
-  <div className="mt-6">
-    <h3 className="font-semibold mb-2">What this place offers</h3>
-    <ul className="grid sm:grid-cols-2 gap-2 text-gray-600 text-sm">
-      {(() => {
-        let list = [];
-
-        if (Array.isArray(property.amenities)) {
-          // ✅ already an array
-          list = property.amenities;
-        } else if (typeof property.amenities === "string") {
-          try {
-            // try parsing JSON first
-            const parsed = JSON.parse(property.amenities);
-            list = Array.isArray(parsed)
-              ? parsed
-              : property.amenities.split(",").map((a) => a.trim());
-          } catch {
-            // fallback: comma-separated
-            list = property.amenities.split(",").map((a) => a.trim());
-          }
-        }
-
-        return list.map((a, i) => <li key={i}>• {a}</li>);
-      })()}
-    </ul>
-  </div>
-)}
-
-
+          {property.amenities?.length > 0 && (
+            <div className="mt-6">
+              <h3 className="font-semibold mb-2">What this place offers</h3>
+              <ul className="grid sm:grid-cols-2 gap-2 text-gray-600 text-sm">
+                {property.amenities.map((a, i) => (
+                  <li key={i}>• {a}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
 
@@ -127,21 +162,22 @@ export default function PropertyDetails() {
         </h2>
 
         <div className="space-y-4 mt-4">
-          {reviews.map((r) => (
-            <div key={r.id} className="border-b pb-3">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{r.user_name}</span>
-                <span className="text-sm text-gray-500">
-                  {"★".repeat(r.rating)}
-                </span>
+          {reviews.length > 0 ? (
+            reviews.map((r) => (
+              <div key={r.id} className="border-b pb-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{r.user_name}</span>
+                  <span className="text-sm text-gray-500">
+                    {"★".repeat(r.rating)}
+                  </span>
+                </div>
+                <p className="text-sm mt-1">{r.comment}</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {new Date(r.created_at).toLocaleDateString()}
+                </p>
               </div>
-              <p className="text-sm mt-1">{r.comment}</p>
-              <p className="text-xs text-gray-400 mt-1">
-                {new Date(r.created_at).toLocaleDateString()}
-              </p>
-            </div>
-          ))}
-          {reviews.length === 0 && (
+            ))
+          ) : (
             <p className="text-gray-500 text-sm">No reviews yet.</p>
           )}
         </div>
