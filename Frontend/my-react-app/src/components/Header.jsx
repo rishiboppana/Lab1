@@ -30,15 +30,12 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 bg-white border-b">
       <div className="max-w-6xl mx-auto flex justify-between items-center h-16 px-6">
-        {/* --- Left logo --- */}
         <Link to="/" className="flex items-center gap-1">
           <span className="text-airbnb-red font-extrabold text-2xl">airbnb</span>
         </Link>
 
-        {/* --- Center search pill --- */}
         <SearchPill />
 
-        {/* --- Right controls --- */}
         <div className="flex items-center gap-4">
           <Link
             to="/post"
@@ -102,20 +99,20 @@ export default function Header() {
   );
 }
 
-/* ---------------- Search pill component ---------------- */
+
 function SearchPill() {
   return (
     <button
-      className="hidden md:flex items-center justify-between rounded-full border py-2 pl-6 pr-2 hover:shadow-md transition text-sm"
-      style={{ boxShadow: "var(--air-shadow)" }}
+      className="hidden md:flex items-center justify-between rounded-full border py-2 px-4 hover:shadow-md transition text-sm space-x-4 bg-white"
     >
-      <span className="font-medium border-r pr-4">Where</span>
-      <span className="px-4 border-r text-gray-600">Check in</span>
-      <span className="px-4 border-r text-gray-600">Check out</span>
-      <span className="px-4 text-gray-600">Who</span>
+      <span className="font-medium border-r pr-4 text-black">Where</span>
+      <span className="text-gray-600 border-r pr-4">Check in</span>
+      <span className="text-gray-600 border-r pr-4">Check out</span>
+      <span className="text-gray-600">Who</span>
       <div className="ml-2 bg-airbnb-red text-white rounded-full w-8 h-8 grid place-items-center">
         🔍
       </div>
     </button>
   );
 }
+

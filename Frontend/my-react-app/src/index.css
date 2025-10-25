@@ -49,6 +49,10 @@ body {
   min-width: 320px;
   min-height: 100vh;
   scroll-behavior: smooth;
+  font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  color: #222222;
+  background-color: #ffffff;
+
 }
 
 h1 {

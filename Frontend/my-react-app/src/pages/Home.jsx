@@ -56,7 +56,7 @@ export default function Home() {
     );
 
   return (
-    <div className="max-w-6xl mx-auto px-4">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
       <div className="sticky top-[72px] bg-white z-40 py-4">
         <SearchBar onSearch={() => {}} />
       </div>
