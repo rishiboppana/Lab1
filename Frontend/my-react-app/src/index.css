@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/*body {*/
+/*  @apply bg-white text-airbnb-dark font-inter;*/
+/*}*/
+
+
+/*:root { --air-shadow: 0 2px 8px rgba(0,0,0,.08); }*/
+/*    html { scroll-behavior: smooth; }*/
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

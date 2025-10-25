@@ -22,17 +22,17 @@ export default function Login() {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-[80vh]">
+    <div className="fixed inset-0 bg-black/40 grid place-items-center z-50">
       <form
         onSubmit={handleLogin}
-        className="bg-white shadow-md rounded-lg p-6 w-full max-w-sm space-y-4"
+        className="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4 shadow-xl animate-fadeIn"
       >
-        <h1 className="text-2xl font-bold text-center text-red-500">Login</h1>
-        {error && <p className="text-red-600 text-sm">{error}</p>}
+        <h1 className="text-2xl font-bold text-center">Log in</h1>
+        {error && <p className="text-red-600 text-sm text-center">{error}</p>}
         <input
           type="email"
           placeholder="Email"
-          className="border p-2 w-full rounded"
+          className="border p-2 w-full rounded-lg"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -40,22 +40,17 @@ export default function Login() {
         <input
           type="password"
           placeholder="Password"
-          className="border p-2 w-full rounded"
+          className="border p-2 w-full rounded-lg"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <button
-          type="submit"
-          className="bg-red-500 text-white w-full py-2 rounded hover:bg-red-600"
-        >
-          Login
+        <button className="bg-airbnb-red text-white w-full py-2 rounded-lg hover:bg-[#E31C5F]">
+          Continue
         </button>
-        <p className="text-sm text-center">
-          Don't have an account?{" "}
-          <Link to="/signup" className="text-red-500 underline">
-            Sign up
-          </Link>
+        <p className="text-center text-sm">
+          Don’t have an account?{" "}
+          <Link to="/signup" className="text-airbnb-red font-medium">Sign up</Link>
         </p>
       </form>
     </div>

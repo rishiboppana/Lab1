@@ -1,6 +1,10 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import AuthProvider, { useAuth } from "./context/AuthContext";
-import Navbar from "./components/Navbar";
+
+// layout pieces
+import Header from "./components/Header";
+import CategoryBar from "./components/CategoryBar";
+import Footer from "./components/Footer";
 
 // pages
 import Home from "./pages/Home";
@@ -13,33 +17,44 @@ import Favorites from "./pages/Favorites";
 import Profile from "./pages/Profile";
 import Owner from "./pages/Owner";
 
+/* ---------- Guarded route helper ---------- */
 function Protected({ children }) {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
   return children;
 }
 
+/* ---------- Main Application ---------- */
 export default function App() {
   return (
     <AuthProvider>
-      <Navbar />
-      <div className="max-w-6xl mx-auto px-4 py-6">
+      {/* Top navigation */}
+      <Header />
+      <CategoryBar />
+
+      {/* Main page content area */}
+      <main className="max-w-6xl mx-auto px-4 py-6 min-h-[70vh]">
         <Routes>
+          {/* Public routes */}
           <Route path="/" element={<Home />} />
           <Route path="/property/:id" element={<PropertyDetails />} />
-
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
 
+          {/* Protected routes (login required) */}
           <Route path="/post" element={<Protected><PostProperty /></Protected>} />
           <Route path="/bookings" element={<Protected><Bookings /></Protected>} />
           <Route path="/favorites" element={<Protected><Favorites /></Protected>} />
           <Route path="/profile" element={<Protected><Profile /></Protected>} />
           <Route path="/owner" element={<Protected><Owner /></Protected>} />
 
+          {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </div>
+      </main>
+
+      {/* Global footer */}
+      <Footer />
     </AuthProvider>
   );
 }
