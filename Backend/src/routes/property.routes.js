@@ -146,14 +146,6 @@ r.put("/:id", requireAuth, upload.array("images", 5), async (req, res) => {
   try {
     const id = req.params.id;
 
-    // ✅ DEBUG: Log everything
-    console.log("=" .repeat(50));
-    console.log("📝 UPDATE REQUEST FOR PROPERTY:", id);
-    console.log("📦 req.body:", req.body);
-    console.log("🖼️ req.files:", req.files);
-    console.log("📊 req.files length:", req.files?.length);
-    console.log("=" .repeat(50));
-
     const {
       title,
       type,
@@ -163,6 +155,8 @@ r.put("/:id", requireAuth, upload.array("images", 5), async (req, res) => {
       bedrooms,
       bathrooms,
       amenities,
+      imageAction,
+      existingImages, // ✅ NEW: Images user wants to keep
     } = req.body;
 
     // ✅ Fetch existing property
@@ -172,35 +166,21 @@ r.put("/:id", requireAuth, upload.array("images", 5), async (req, res) => {
     }
 
     const existing = rows[0];
-    console.log("🏠 Existing property images:", existing.images);
 
     // ✅ Check ownership
     if (existing.owner_id !== req.session.user?.id) {
       return res.status(403).json({ error: "Not authorized" });
     }
 
-    // ✅ Parse old images
-let oldImages = [];
-try {
-  if (existing.images) {
-    // Check if it's already an array or a JSON string
-    if (Array.isArray(existing.images)) {
-      oldImages = existing.images;
-    } else if (typeof existing.images === 'string') {
-      // Try to parse as JSON first
+    // ✅ Parse existing images that user wants to keep
+    let keptImages = [];
+    if (existingImages) {
       try {
-        oldImages = JSON.parse(existing.images);
+        keptImages = JSON.parse(existingImages);
       } catch {
-        // If parsing fails, it might be a single image path
-        oldImages = [existing.images];
+        keptImages = [];
       }
     }
-    console.log("✅ Parsed old images:", oldImages);
-  }
-} catch (err) {
-  console.log("❌ Failed to parse old images:", err.message);
-  oldImages = [];
-}
 
     // ✅ Parse old amenities
     let oldAmenities = [];
@@ -212,20 +192,55 @@ try {
       oldAmenities = [];
     }
 
-    // ✅ Handle NEW images
-    let finalImages = oldImages; // Default: keep old images
-
-    console.log("🔍 Checking for new uploads...");
-    console.log("   req.files exists?", !!req.files);
-    console.log("   req.files.length:", req.files?.length);
+    // ✅ Handle NEW images with 5-image limit
+    let finalImages = keptImages; // Default: use kept images from frontend
 
     if (req.files && req.files.length > 0) {
       const newImages = req.files.map((f) => `/uploads/${f.filename}`);
-      console.log("🆕 New images uploaded:", newImages);
-      finalImages = newImages; // Replace with new images
-    } else {
-      console.log("⏭️ No new images, keeping old ones:", oldImages);
+
+      // ✅ Validate: uploaded files should not exceed 5
+      if (newImages.length > 5) {
+        return res.status(400).json({
+          error: "Cannot upload more than 5 images at once"
+        });
+      }
+
+      if (imageAction === "replace") {
+        // Replace all images
+        finalImages = newImages;
+        console.log("🔄 Replacing all images with new ones");
+      } else {
+        // Add to kept images
+        const combined = [...keptImages, ...newImages];
+
+        // ✅ Validate: total should not exceed 5
+        if (combined.length > 5) {
+          return res.status(400).json({
+            error: `Cannot have more than 5 images total. You have ${keptImages.length} existing images, so you can only add ${5 - keptImages.length} more.`
+          });
+        }
+
+        finalImages = combined;
+        console.log("➕ Adding new images to kept images");
+      }
     }
+
+    // ✅ Validate: must have at least 1 image
+    if (finalImages.length === 0) {
+      return res.status(400).json({
+        error: "Property must have at least 1 image"
+      });
+    }
+
+    // ✅ Final validation: ensure we never exceed 5 images
+    if (finalImages.length > 5) {
+      return res.status(400).json({
+        error: "Cannot have more than 5 images for a property"
+      });
+    }
+
+    console.log("📸 Final images count:", finalImages.length);
+    console.log("📸 Final images:", finalImages);
 
     // ✅ Handle amenities
     let amenityList = oldAmenities;
@@ -245,8 +260,6 @@ try {
       amenities: JSON.stringify(amenityList),
       images: JSON.stringify(finalImages),
     };
-
-    console.log("💾 About to save images:", updated.images);
 
     // ✅ Update database
     await db.query(
@@ -268,9 +281,6 @@ try {
       ]
     );
 
-    console.log("✅ Property updated successfully!");
-    console.log("=" .repeat(50));
-
     res.json({
       message: "✅ Property updated successfully",
       property: updated
@@ -284,6 +294,8 @@ try {
     });
   }
 });
+
+
 // Delete property
 r.delete("/:id", async (req, res) => {
   try {
