@@ -46,7 +46,7 @@ export default function Header() {
           <span className="text-airbnb-red font-extrabold text-2xl">airbnb</span>
         </Link>
 
-        <SearchPill />
+            <SearchPill />
 
         <div className="flex items-center gap-4">
           <button
@@ -97,6 +97,19 @@ export default function Header() {
                   <>
                     <Link className="block px-4 py-3 hover:bg-gray-50" to="/profile">
                       Profile
+                    </Link>
+                      <Link
+                      to="/my-trips"
+                      className="block px-4 py-2 hover:bg-gray-100"
+                    >
+                      My Trips
+                    </Link>
+
+                    <Link
+                      to="/favorites"
+                      className="block px-4 py-2 hover:bg-gray-100"
+                    >
+                      Favorites
                     </Link>
                     <button
                       onClick={logout}

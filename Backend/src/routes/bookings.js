@@ -114,4 +114,75 @@ router.get("/owner/:ownerId", async (req, res) => {
   res.json({ bookings: rows });
 });
 
+// Get user's trip history (all their bookings)
+router.get("/my-trips", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+
+    const [trips] = await db.query(
+      `SELECT 
+        b.id,
+        b.check_in,
+        b.check_out,
+        b.total_price,
+        b.status,
+        b.created_at,
+        p.id as property_id,
+        p.title,
+        p.location,
+        p.type,
+        p.images,
+        p.price_per_night,
+        u.name as owner_name,
+        u.email as owner_email
+       FROM bookings b
+       JOIN properties p ON b.property_id = p.id
+       JOIN users u ON p.owner_id = u.id
+       WHERE b.user_id = ?
+       ORDER BY b.check_in DESC`,
+      [userId]
+    );
+
+    console.log(`📅 Found ${trips.length} trips for user ${userId}`);
+    res.json({ trips });
+  } catch (err) {
+    console.error("Error fetching user trips:", err);
+    res.status(500).json({ error: "Failed to fetch trip history" });
+  }
+});
+
+// Cancel a booking (traveler can cancel their own booking)
+router.delete("/:id", requireAuth, async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const userId = req.session.user.id;
+
+    // Check if booking belongs to user
+    const [booking] = await db.query(
+      "SELECT * FROM bookings WHERE id = ? AND user_id = ?",
+      [bookingId, userId]
+    );
+
+    if (!booking.length) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    // Only allow canceling Pending or Accepted bookings
+    if (booking[0].status === "Cancelled") {
+      return res.status(400).json({ error: "Booking is already cancelled" });
+    }
+
+    // Update status to Cancelled
+    await db.query(
+      "UPDATE bookings SET status = 'Cancelled' WHERE id = ?",
+      [bookingId]
+    );
+
+    res.json({ message: "Booking cancelled successfully" });
+  } catch (err) {
+    console.error("Error cancelling booking:", err);
+    res.status(500).json({ error: "Failed to cancel booking" });
+  }
+});
+
 export default router;
