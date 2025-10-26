@@ -12,14 +12,12 @@ const AIConcierge = ({ userId }) => {
   const [error, setError] = useState(null);
   const chatEndRef = useRef(null);
 
-  // Fetch user bookings when component mounts
   useEffect(() => {
     if (isOpen && userId) {
       fetchUserBookings();
     }
   }, [isOpen, userId]);
 
-  // Auto-scroll to bottom when itinerary updates
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -28,11 +26,9 @@ const AIConcierge = ({ userId }) => {
 
   const fetchUserBookings = async () => {
     try {
-      // Use the correct port 4000 and /upcoming endpoint
       const response = await axios.get(`http://localhost:4000/api/bookings/upcoming/${userId}`);
       console.log('✅ Fetched bookings:', response.data);
 
-      // Handle different response formats
       const bookingsData = Array.isArray(response.data)
         ? response.data
         : response.data.bookings || [];
@@ -74,7 +70,6 @@ const AIConcierge = ({ userId }) => {
 
       console.log('📤 Sending request:', requestData);
 
-      // Call AI Concierge API on port 8000 (Python FastAPI)
       const response = await axios.post('http://localhost:8000/api/concierge', requestData);
 
       console.log('✅ Received response:', response.data);
@@ -84,11 +79,9 @@ const AIConcierge = ({ userId }) => {
       console.error('❌ Error generating itinerary:', err);
       console.error('Error details:', err.response?.data);
 
-      // Better error message handling
       let errorMessage = 'Failed to generate itinerary. Please try again.';
 
       if (err.response?.data?.detail) {
-        // Handle validation errors
         if (Array.isArray(err.response.data.detail)) {
           errorMessage = err.response.data.detail.map(e => e.msg).join(', ');
         } else {
@@ -112,13 +105,14 @@ const AIConcierge = ({ userId }) => {
   };
 
   const getPriceTierIcon = (tier) => {
-    const tiers = { budget: '$', medium: '$$', premium: '$$$' };
-    return tiers[tier] || '$$';
+    if (tier === '$' || tier === 'low') return '$';
+    if (tier === '$$' || tier === 'medium') return '$$';
+    if (tier === '$$$' || tier === 'high') return '$$$';
+    return '$$';
   };
 
   return (
     <>
-      {/* Floating Button */}
       <button
         className={`ai-concierge-button ${isOpen ? 'hidden' : ''}`}
         onClick={() => setIsOpen(true)}
@@ -130,10 +124,8 @@ const AIConcierge = ({ userId }) => {
         <span>AI Travel Assistant</span>
       </button>
 
-      {/* Side Panel */}
       {isOpen && (
         <div className="ai-concierge-panel">
-          {/* Header */}
           <div className="panel-header">
             <div>
               <h3>🧳 AI Travel Concierge</h3>
@@ -144,9 +136,7 @@ const AIConcierge = ({ userId }) => {
             </button>
           </div>
 
-          {/* Content */}
           <div className="panel-content">
-            {/* Booking Selection */}
             {!itinerary && (
               <div className="booking-selection">
                 <h4>Select Your Upcoming Trip</h4>
@@ -178,7 +168,6 @@ const AIConcierge = ({ userId }) => {
               </div>
             )}
 
-            {/* Input Section */}
             {selectedBooking && !itinerary && (
               <div className="input-section">
                 <h4>Tell us your preferences (optional)</h4>
@@ -208,7 +197,6 @@ const AIConcierge = ({ userId }) => {
               </div>
             )}
 
-            {/* Error Display */}
             {error && (
               <div className="error-message">
                 <span>⚠️</span>
@@ -216,15 +204,12 @@ const AIConcierge = ({ userId }) => {
               </div>
             )}
 
-            {/* Itinerary Display */}
             {itinerary && (
               <div className="itinerary-results">
-                {/* Back Button */}
                 <button className="back-button" onClick={() => { setItinerary(null); setSelectedBooking(null); }}>
                   ← Back to Bookings
                 </button>
 
-                {/* Weather Summary */}
                 {itinerary.weather_summary && (
                   <div className="weather-card">
                     <h4>🌤️ Weather Forecast</h4>
@@ -232,18 +217,16 @@ const AIConcierge = ({ userId }) => {
                   </div>
                 )}
 
-                {/* Day Plans */}
                 <div className="day-plans">
-                  <h4>📅 Your Itinerary ({itinerary.days.length} days)</h4>
-                  {itinerary.days.map((day, index) => (
+                  <h4>📅 Your Itinerary ({itinerary.itinerary?.length || 0} days)</h4>
+                  {itinerary.itinerary?.map((day, index) => (
                     <div key={index} className="day-card">
                       <div className="day-header">
-                        <h5>Day {index + 1} - {formatDate(day.date)}</h5>
-                        <p className="day-summary">{day.summary}</p>
+                        <h5>Day {day.day_number} - {formatDate(day.date)}</h5>
+                        {day.daily_summary && <p className="day-summary">{day.daily_summary}</p>}
                       </div>
 
-                      {/* Morning Activities */}
-                      {day.morning.length > 0 && (
+                      {day.morning?.length > 0 && (
                         <div className="time-block">
                           <h6>🌅 Morning</h6>
                           <div className="activities">
@@ -253,15 +236,18 @@ const AIConcierge = ({ userId }) => {
                                   <h6>{activity.title}</h6>
                                   <span className="price-tier">{getPriceTierIcon(activity.price_tier)}</span>
                                 </div>
+                                <p className="description">{activity.description}</p>
                                 <p className="address">📍 {activity.address}</p>
                                 <p className="duration">⏱️ {activity.duration}</p>
-                                <div className="tags">
-                                  {activity.tags.map((tag, i) => (
-                                    <span key={i} className="tag">{tag}</span>
-                                  ))}
-                                </div>
+                                {activity.tags?.length > 0 && (
+                                  <div className="tags">
+                                    {activity.tags.map((tag, i) => (
+                                      <span key={i} className="tag">{tag}</span>
+                                    ))}
+                                  </div>
+                                )}
                                 <div className="accessibility">
-                                  {activity.wheelchair_accessible && <span>♿ Wheelchair Accessible</span>}
+                                  {activity.wheelchair_friendly && <span>♿ Wheelchair Accessible</span>}
                                   {activity.child_friendly && <span>👶 Child Friendly</span>}
                                 </div>
                               </div>
@@ -270,8 +256,7 @@ const AIConcierge = ({ userId }) => {
                         </div>
                       )}
 
-                      {/* Afternoon Activities */}
-                      {day.afternoon.length > 0 && (
+                      {day.afternoon?.length > 0 && (
                         <div className="time-block">
                           <h6>☀️ Afternoon</h6>
                           <div className="activities">
@@ -281,16 +266,19 @@ const AIConcierge = ({ userId }) => {
                                   <h6>{activity.title}</h6>
                                   <span className="price-tier">{getPriceTierIcon(activity.price_tier)}</span>
                                 </div>
+                                <p className="description">{activity.description}</p>
                                 <p className="address">📍 {activity.address}</p>
                                 <p className="duration">⏱️ {activity.duration}</p>
-                                <div className="tags">
-                                  {activity.tags.map((tag, i) => (
-                                    <span key={i} className="tag">{tag}</span>
-                                  ))}
-                                </div>
+                                {activity.tags?.length > 0 && (
+                                  <div className="tags">
+                                    {activity.tags.map((tag, i) => (
+                                      <span key={i} className="tag">{tag}</span>
+                                    ))}
+                                  </div>
+                                )}
                                 <div className="accessibility">
-                                  {activity.wheelchair_accessible && <span>♿ Wheelchair Accessible</span>}
-                                  {activity.child_friendly && <span>👶 Child Friendly</span>}
+                                  {activity.wheelchair_friendly && <span>♿ Accessible</span>}
+                                  {activity.child_friendly && <span>👶 Kid-Friendly</span>}
                                 </div>
                               </div>
                             ))}
@@ -298,8 +286,7 @@ const AIConcierge = ({ userId }) => {
                         </div>
                       )}
 
-                      {/* Evening Activities */}
-                      {day.evening.length > 0 && (
+                      {day.evening?.length > 0 && (
                         <div className="time-block">
                           <h6>🌙 Evening</h6>
                           <div className="activities">
@@ -309,16 +296,19 @@ const AIConcierge = ({ userId }) => {
                                   <h6>{activity.title}</h6>
                                   <span className="price-tier">{getPriceTierIcon(activity.price_tier)}</span>
                                 </div>
+                                <p className="description">{activity.description}</p>
                                 <p className="address">📍 {activity.address}</p>
                                 <p className="duration">⏱️ {activity.duration}</p>
-                                <div className="tags">
-                                  {activity.tags.map((tag, i) => (
-                                    <span key={i} className="tag">{tag}</span>
-                                  ))}
-                                </div>
+                                {activity.tags?.length > 0 && (
+                                  <div className="tags">
+                                    {activity.tags.map((tag, i) => (
+                                      <span key={i} className="tag">{tag}</span>
+                                    ))}
+                                  </div>
+                                )}
                                 <div className="accessibility">
-                                  {activity.wheelchair_accessible && <span>♿ Wheelchair Accessible</span>}
-                                  {activity.child_friendly && <span>👶 Child Friendly</span>}
+                                  {activity.wheelchair_friendly && <span>♿ Accessible</span>}
+                                  {activity.child_friendly && <span>👶 Kid-Friendly</span>}
                                 </div>
                               </div>
                             ))}
@@ -326,8 +316,7 @@ const AIConcierge = ({ userId }) => {
                         </div>
                       )}
 
-                      {/* Restaurants */}
-                      {day.restaurants.length > 0 && (
+                      {day.restaurants?.length > 0 && (
                         <div className="restaurants-section">
                           <h6>🍽️ Recommended Restaurants</h6>
                           <div className="restaurants">
@@ -335,18 +324,23 @@ const AIConcierge = ({ userId }) => {
                               <div key={idx} className="restaurant-card">
                                 <div className="restaurant-header">
                                   <h6>{restaurant.name}</h6>
-                                  <span className="rating">⭐ {restaurant.rating}</span>
+                                  {restaurant.rating && <span className="rating">⭐ {restaurant.rating}</span>}
                                 </div>
                                 <p className="cuisine">{restaurant.cuisine}</p>
+                                {restaurant.description && <p className="description">{restaurant.description}</p>}
                                 <p className="address">📍 {restaurant.address}</p>
                                 <span className="price-tier">{getPriceTierIcon(restaurant.price_tier)}</span>
-                                {restaurant.dietary_options.length > 0 && (
+                                {restaurant.dietary_options?.length > 0 && (
                                   <div className="dietary-options">
                                     {restaurant.dietary_options.map((option, i) => (
                                       <span key={i} className="dietary-tag">{option}</span>
                                     ))}
                                   </div>
                                 )}
+                                <div className="accessibility">
+                                  {restaurant.wheelchair_accessible && <span>♿ Accessible</span>}
+                                  {restaurant.child_friendly && <span>👶 Kid-Friendly</span>}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -356,8 +350,7 @@ const AIConcierge = ({ userId }) => {
                   ))}
                 </div>
 
-                {/* Packing Checklist */}
-                {itinerary.packing_checklist && itinerary.packing_checklist.length > 0 && (
+                {itinerary.packing_checklist?.length > 0 && (
                   <div className="packing-section">
                     <h4>🎒 Packing Checklist</h4>
                     <ul className="packing-list">
@@ -368,8 +361,7 @@ const AIConcierge = ({ userId }) => {
                   </div>
                 )}
 
-                {/* Local Tips */}
-                {itinerary.local_tips && itinerary.local_tips.length > 0 && (
+                {itinerary.local_tips?.length > 0 && (
                   <div className="tips-section">
                     <h4>💡 Local Tips</h4>
                     <ul className="tips-list">
@@ -377,6 +369,14 @@ const AIConcierge = ({ userId }) => {
                         <li key={index}>{tip}</li>
                       ))}
                     </ul>
+                  </div>
+                )}
+
+                {itinerary.total_estimated_cost && (
+                  <div className="cost-section">
+                    <h4>💰 Estimated Cost</h4>
+                    <p className="cost-amount">{itinerary.total_estimated_cost}</p>
+                    <p className="cost-note">*Excluding accommodation</p>
                   </div>
                 )}
 

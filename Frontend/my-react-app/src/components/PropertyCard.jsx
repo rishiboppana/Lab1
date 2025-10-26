@@ -2,73 +2,72 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import FavoriteButton from "./FavoriteButton";
 import { Star } from "lucide-react";
-import { Heart} from "lucide-react"
 
 export default function PropertyCard({ p }) {
-    let imgs = [];
-    try {
-      imgs = typeof p.images === "string" ? JSON.parse(p.images) : p.images;
-    } catch {}
+  // Parse images properly
+  let imgs = [];
+  try {
+    imgs = typeof p.images === "string" ? JSON.parse(p.images) : p.images;
+  } catch {
+    imgs = [];
+  }
 
-    let cover = imgs?.[0] || "";
-    if (cover && !cover.startsWith("http")) {
-      cover = `http://localhost:4000${cover}`;
-    }
+  // Get cover image
+  let cover = imgs?.[0] || "";
+  if (cover && !cover.startsWith("http")) {
+    cover = `http://localhost:4000${cover}`;
+  }
 
-    const handleImgError = (e) => {
-      e.target.src = "https://placehold.co/600x400?text=No+Image";
-    };
+  const handleImgError = (e) => {
+    e.target.src = "https://placehold.co/400x400?text=No+Image";
+  };
 
   return (
     <motion.div
       whileHover={{ scale: 1.03, y: -4 }}
       transition={{ type: "spring", stiffness: 250, damping: 18 }}
-      className="group relative cursor-pointer"
+      className="group relative cursor-pointer flex-shrink-0 w-[240px]"
     >
       <Link
-          to={`/property/${p.id}`}
-          className="block relative overflow-hidden rounded-2xl bg-gray-100"
-        >
-          <FavoriteButton
-            propertyId={p.id}
-            className="absolute top-3 right-3 z-10"
-          />
-        <img
-           src={
-            Array.isArray(p.images)
-              ? p.images[0]
-              : (() => {
-                  try {
-                    const imgs = JSON.parse(p.images || "[]");
-                    return imgs[0];
-                  } catch {
-                    return p.images;
-                  }
-                })()
-          }
-          alt={p.title}
-          onError={handleImgError}
-          className="w-full h-64 object-cover rounded-2xl transition-transform duration-300 group-hover:scale-105"
+        to={`/property/${p.id}`}
+        className="block relative overflow-hidden rounded-xl bg-gray-100"
+      >
+        {/* Favorite Button - Only ONE */}
+        <FavoriteButton
+          propertyId={p.id}
+          className="absolute top-3 right-3 z-10 text-white text-2xl drop-shadow-lg hover:scale-110 transition"
         />
-        <FavoriteButton propertyId={p.id}
-                        className="absolute top-3 right-3 text-white text-2xl drop-shadow-lg hover:scale-110 transition" />
+
+        {/* Property Image with fixed aspect ratio */}
+        <div className="relative w-full  aspect-square overflow-hidden rounded-xl">
+          <img
+            src={cover || "https://placehold.co/400x400?text=No+Image"}
+            alt={p.title}
+            onError={handleImgError}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+          />
+        </div>
       </Link>
 
+      {/* Property Details */}
       <div className="mt-2">
-        <div className="flex justify-between items-start">
-          <h3 className="font-semibold text-sm text-airbnb-dark line-clamp-1">{p.title}</h3>
-        <div className="flex items-center text-xs text-gray-600">
-          <Star size={12} className="text-airbnb-red mr-[2px]" />
-          {p.avg_rating ? Number(p.avg_rating).toFixed(1) : "–"}
-          <span className="ml-1 text-gray-400">
-            ({p.review_count || 0})
-          </span>
+        <div className="flex justify-between items-start gap-2">
+          <h3 className="font-semibold text-[15px] text-gray-900 line-clamp-1 flex-1">
+            {p.title}
+          </h3>
+          <div className="flex items-center text-xs flex-shrink-0">
+            <Star size={12} className="fill-black text-black mr-1" />
+            <span className="font-medium">
+              {p.avg_rating ? Number(p.avg_rating).toFixed(2) : "New"}
+            </span>
+          </div>
         </div>
-        </div>
-        <p className="text-[13px] text-airbnb-gray">{p.location}</p>
-        <p className="text-[13px] mt-1">
-          <span className="font-semibold">${p.price_per_night}</span>
-          <span className="text-gray-500"> night</span>
+
+        <p className="text-[14px] text-gray-600 mt-0.5 line-clamp-1">{p.location}</p>
+
+        <p className="text-[14px] mt-0.5 text-gray-600">
+          <span className="font-normal">${Number(p.price_per_night).toFixed(0)}</span>
+          <span className="text-gray-600 font-normal"> night</span>
         </p>
       </div>
     </motion.div>

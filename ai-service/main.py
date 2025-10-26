@@ -116,7 +116,7 @@ def fetch_booking_from_db(booking_id: int):
         return booking
 
     except Exception as e:
-        print(f"Error fetching booking from database: {e}")
+        print(f"❌ Error fetching booking from database: {e}")
         raise
 
 
@@ -166,6 +166,7 @@ async def generate_itinerary(request: AgentRequest):
         # Default: assume all adults unless specified in free_text
         adults = total_guests
         children = 0
+        infants = 0
 
         # Try to parse children from free_text
         if request.free_text:
@@ -175,21 +176,32 @@ async def generate_itinerary(request: AgentRequest):
                 children = 1
                 adults = max(1, total_guests - children)
 
-        # Create booking context
+        # Create PartyType
+        party_type = PartyType(
+            adults=adults,
+            children=children,
+            infants=infants
+        )
+
+        # Create booking context with correct field names
         booking_context = BookingContext(
+            booking_id=booking_data['id'],
             location=booking_data['location'],
-            check_in=str(check_in),
-            check_out=str(check_out),
-            party_type=PartyType(adults=adults, children=children)
+            check_in=check_in_str,
+            check_out=check_out_str,
+            party_type=party_type
         )
 
         # Use provided preferences or create defaults
-        preferences = request.preferences or Preferences(
-            budget='medium',
-            interests=['culture', 'food', 'nature'],
-            dietary_restrictions = [],
-            mobility_needs='none'
-        )
+        if request.preferences:
+            preferences = request.preferences
+        else:
+            preferences = Preferences(
+                budget='medium',
+                interests=['culture', 'food', 'nature'],
+                dietary_restrictions=[],
+                mobility_needs='none'
+            )
 
         # Extract preferences from free_text if provided
         if request.free_text:
@@ -200,9 +212,11 @@ async def generate_itinerary(request: AgentRequest):
                 'vegan': 'vegan',
                 'vegetarian': 'vegetarian',
                 'gluten-free': 'gluten-free',
+                'gluten free': 'gluten-free',
                 'halal': 'halal',
                 'kosher': 'kosher',
-                'dairy-free': 'dairy-free'
+                'dairy-free': 'dairy-free',
+                'dairy free': 'dairy-free'
             }
             for keyword, restriction in dietary_keywords.items():
                 if keyword in free_text_lower and restriction not in preferences.dietary_restrictions:
@@ -218,29 +232,45 @@ async def generate_itinerary(request: AgentRequest):
                 'nightlife': ['nightlife', 'bar', 'club', 'party'],
                 'shopping': ['shopping', 'mall', 'boutique']
             }
+            detected_interests = []
             for interest, keywords in interest_keywords.items():
-                if any(kw in free_text_lower for kw in keywords) and interest not in preferences.interests:
-                    preferences.interests.append(interest)
+                if any(kw in free_text_lower for kw in keywords):
+                    detected_interests.append(interest)
+
+            # Merge detected interests with existing ones
+            if detected_interests:
+                preferences.interests = list(set(preferences.interests + detected_interests))
 
             # Detect mobility needs
             if 'wheelchair' in free_text_lower or 'accessible' in free_text_lower:
                 preferences.mobility_needs = 'wheelchair'
-            elif 'limited mobility' in free_text_lower or 'no long walk' in free_text_lower or 'no hike' in free_text_lower:
+            elif 'limited mobility' in free_text_lower or 'no long walk' in free_text_lower:
                 preferences.mobility_needs = 'limited'
 
         print(f"🎯 Generating itinerary for {booking_context.location}")
-        print(f"   Dates: {check_in} to {check_out}")
+        print(f"   Dates: {check_in_str} to {check_out_str}")
         print(f"   Party: {adults} adults, {children} children")
         print(f"   Interests: {preferences.interests}")
         print(f"   Dietary: {preferences.dietary_restrictions}")
 
+        # Create properly structured AgentRequest for the service
+        agent_request = AgentRequest(
+            booking_id=request.booking_id,
+            user_id=request.user_id,
+            free_text=request.free_text,
+            preferences=preferences
+        )
+
         # Generate itinerary using AI agent
+        print("🤖 Calling AI Agent Service...")
         itinerary = agent_service.generate_itinerary(
-            request.data
+            booking_context=booking_context,
+            preferences=preferences,
+            free_text=request.free_text
         )
 
         print(f"✅ Itinerary generated successfully!")
-        print(f"   Days: {len(itinerary.days)}")
+        print(f"   Days: {len(itinerary.itinerary)}")
         print(f"   Packing items: {len(itinerary.packing_checklist)}")
 
         return itinerary

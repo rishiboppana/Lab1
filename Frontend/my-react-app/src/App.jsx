@@ -44,9 +44,9 @@ function AIConciergeWrapper() {
 export default function App() {
   return (
     <AuthProvider>
-      {/* Top navigation */}
+
       <Header />
-      <CategoryBar />
+      {/*<CategoryBar />*/}
 
       {/* Main page content area */}
       <main className="max-w-6xl mx-auto px-4 py-6 min-h-[70vh]">
