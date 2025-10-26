@@ -2,7 +2,6 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import AuthProvider, { useAuth } from "./context/AuthContext";
 import OwnerDashboard from "./pages/OwnerDashboard";
 
-
 // layout pieces
 import Header from "./components/Header";
 import CategoryBar from "./components/CategoryBar";
@@ -17,11 +16,11 @@ import PostProperty from "./pages/PostProperty";
 import Bookings from "./pages/Bookings";
 import Favorites from "./pages/Favorites";
 import Profile from "./pages/Profile";
-import Owner from "./pages/Owner";
-import MyTrips from "./pages/MyTrips.jsx"
+import MyTrips from "./pages/MyTrips.jsx";
 import AddProperty from "./pages/AddProperty";
 import EditProperty from "./pages/EditProperty";
 import Wishlist from "./pages/Wishlist";
+import OwnerBookings from "./pages/OwnerBookings.jsx";
 
 /* ---------- Guarded route helper ---------- */
 function Protected({ children }) {
@@ -52,18 +51,15 @@ export default function App() {
           <Route path="/bookings" element={<Protected><Bookings /></Protected>} />
           <Route path="/favorites" element={<Protected><Favorites /></Protected>} />
           <Route path="/profile" element={<Protected><Profile /></Protected>} />
-          <Route path="/owner" element={<Protected><Owner /></Protected>} />
-          <Route path="/my-trips" element={<MyTrips />} />
-          <Route path="/owner" element={<OwnerDashboard />} />
-          <Route path="/add-property" element={<AddProperty />} />
-          <Route path="/owner" element={<Owner />} />
-          <Route path="/owner" element={<OwnerDashboard />} />
-          <Route path="/edit-property/:id"
-             element={
-                <Protected>
-                  <EditProperty />
-                </Protected> } />
+          <Route path="/my-trips" element={<Protected><MyTrips /></Protected>} />
           <Route path="/wishlist" element={<Protected><Wishlist /></Protected>} />
+
+          {/* Owner routes - CLEANED UP */}
+          <Route path="/owner" element={<Protected><OwnerDashboard /></Protected>} />
+          <Route path="/owner-bookings" element={<Protected><OwnerBookings /></Protected>} />
+          <Route path="/add-property" element={<Protected><AddProperty /></Protected>} />
+          <Route path="/edit-property/:id" element={<Protected><EditProperty /></Protected>} />
+
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
