@@ -1,0 +1,541 @@
+/* AI Concierge Floating Button */
+.ai-concierge-button {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s ease;
+  z-index: 999;
+}
+
+.ai-concierge-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5);
+}
+
+.ai-concierge-button.hidden {
+  display: none;
+}
+
+.ai-concierge-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Side Panel */
+.ai-concierge-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 450px;
+  height: 100vh;
+  background: white;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Panel Header */
+.panel-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.panel-header p {
+  margin: 5px 0 0 0;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.close-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.close-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Panel Content */
+.panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+/* Booking Selection */
+.booking-selection h4,
+.input-section h4,
+.day-plans h4,
+.packing-section h4,
+.tips-section h4,
+.weather-card h4 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.no-bookings {
+  text-align: center;
+  padding: 40px 20px;
+  color: #718096;
+  font-size: 14px;
+}
+
+.booking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.booking-card {
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.booking-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+}
+
+.booking-card.selected {
+  border-color: #667eea;
+  background: #f7fafc;
+}
+
+.booking-info h5 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.booking-info p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #4a5568;
+}
+
+.selected-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #667eea;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Input Section */
+.input-section {
+  margin-top: 24px;
+}
+
+.user-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 12px;
+  transition: border-color 0.2s;
+}
+
+.user-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.generate-button {
+  width: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.2s;
+}
+
+.generate-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.generate-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error Message */
+.error-message {
+  background: #fed7d7;
+  color: #c53030;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Itinerary Results */
+.itinerary-results {
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.back-button {
+  background: #e2e8f0;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: background 0.2s;
+}
+
+.back-button:hover {
+  background: #cbd5e0;
+}
+
+/* Weather Card */
+.weather-card {
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.weather-card p {
+  margin: 8px 0 0 0;
+  font-size: 14px;
+  color: #4a5568;
+  line-height: 1.6;
+}
+
+/* Day Card */
+.day-plans {
+  margin-bottom: 20px;
+}
+
+.day-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.day-header {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.day-header h5 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.day-summary {
+  margin: 0;
+  font-size: 14px;
+  color: #718096;
+  font-style: italic;
+}
+
+/* Time Blocks */
+.time-block {
+  margin-bottom: 24px;
+}
+
+.time-block h6 {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.activities {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Activity Card */
+.activity-card {
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px;
+  transition: box-shadow 0.2s;
+}
+
+.activity-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.activity-header h6 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #2d3748;
+  flex: 1;
+}
+
+.price-tier {
+  background: #667eea;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.activity-card .address,
+.activity-card .duration {
+  font-size: 13px;
+  color: #718096;
+  margin: 4px 0;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.tag {
+  background: #edf2f7;
+  color: #4a5568;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.accessibility {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #667eea;
+}
+
+/* Restaurants Section */
+.restaurants-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid #e2e8f0;
+}
+
+.restaurants-section h6 {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.restaurants {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.restaurant-card {
+  background: #fffaf0;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.restaurant-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.restaurant-header h6 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.rating {
+  color: #f59e0b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.restaurant-card .cuisine,
+.restaurant-card .address {
+  font-size: 13px;
+  color: #718096;
+  margin: 4px 0;
+}
+
+.dietary-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.dietary-tag {
+  background: #d1fae5;
+  color: #047857;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Packing Section */
+.packing-section,
+.tips-section {
+  background: #f7fafc;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.packing-list,
+.tips-list {
+  margin: 8px 0 0 0;
+  padding-left: 24px;
+}
+
+.packing-list li,
+.tips-list li {
+  font-size: 14px;
+  color: #4a5568;
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .ai-concierge-panel {
+    width: 100%;
+  }
+  
+  .ai-concierge-button {
+    bottom: 16px;
+    right: 16px;
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+}
+
+/* Scrollbar Styling */
+.panel-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.panel-content::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 4px;
+}
+
+.panel-content::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
