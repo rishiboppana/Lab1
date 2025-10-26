@@ -13,8 +13,8 @@ def test_models():
     booking = BookingContext(
         booking_id=1,
         location="San Francisco, CA",
-        start_date="2025-11-01",
-        end_date="2025-11-05",
+        check_in="2025-11-01",
+        check_out="2025-11-05",
         party_type=party
     )
     print(f"✓ BookingContext created: {booking.location}, {party.adults} adults, {party.children} children")

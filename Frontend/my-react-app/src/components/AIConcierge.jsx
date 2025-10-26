@@ -28,11 +28,18 @@ const AIConcierge = ({ userId }) => {
 
   const fetchUserBookings = async () => {
     try {
-      // Replace with your actual booking API endpoint
-      const response = await axios.get(`http://localhost:3001/api/bookings/user/${userId}`);
-      setUserBookings(response.data);
+      // Use the correct port 4000 and /upcoming endpoint
+      const response = await axios.get(`http://localhost:4000/api/bookings/upcoming/${userId}`);
+      console.log('✅ Fetched bookings:', response.data);
+
+      // Handle different response formats
+      const bookingsData = Array.isArray(response.data)
+        ? response.data
+        : response.data.bookings || [];
+
+      setUserBookings(bookingsData);
     } catch (err) {
-      console.error('Error fetching bookings:', err);
+      console.error('❌ Error fetching bookings:', err);
       setError('Could not fetch your bookings');
     }
   };
@@ -56,7 +63,7 @@ const AIConcierge = ({ userId }) => {
       const requestData = {
         booking_id: selectedBooking.id,
         user_id: userId,
-        free_text: userInput || 'Generate a personalized itinerary for my trip',
+        free_text: userInput || null,
         preferences: {
           budget: 'medium',
           interests: ['culture', 'food', 'nature'],
@@ -65,13 +72,31 @@ const AIConcierge = ({ userId }) => {
         }
       };
 
-      // Call AI Concierge API
+      console.log('📤 Sending request:', requestData);
+
+      // Call AI Concierge API on port 8000 (Python FastAPI)
       const response = await axios.post('http://localhost:8000/api/concierge', requestData);
+
+      console.log('✅ Received response:', response.data);
       setItinerary(response.data);
       setUserInput('');
     } catch (err) {
-      console.error('Error generating itinerary:', err);
-      setError(err.response?.data?.detail || 'Failed to generate itinerary. Please try again.');
+      console.error('❌ Error generating itinerary:', err);
+      console.error('Error details:', err.response?.data);
+
+      // Better error message handling
+      let errorMessage = 'Failed to generate itinerary. Please try again.';
+
+      if (err.response?.data?.detail) {
+        // Handle validation errors
+        if (Array.isArray(err.response.data.detail)) {
+          errorMessage = err.response.data.detail.map(e => e.msg).join(', ');
+        } else {
+          errorMessage = err.response.data.detail;
+        }
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -186,7 +211,8 @@ const AIConcierge = ({ userId }) => {
             {/* Error Display */}
             {error && (
               <div className="error-message">
-                ⚠️ {error}
+                <span>⚠️</span>
+                <span>{typeof error === 'string' ? error : 'An error occurred'}</span>
               </div>
             )}
 

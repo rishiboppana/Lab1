@@ -28,7 +28,7 @@ class Preferences(BaseModel):
         default="none",
         description="Mobility requirements: none, limited, or wheelchair"
     )
-    dietary_filters: List[str] = Field(
+    dietary_restrictions: List[str] = Field(
         default=[],
         description="Dietary restrictions: vegan, vegetarian, gluten-free, halal, kosher, dairy-free"
     )
@@ -43,23 +43,38 @@ class BookingContext(BaseModel):
     location: str = Field(
         description="Destination location/city"
     )
-    start_date: str = Field(
+    check_in: str = Field(
         description="Check-in date in YYYY-MM-DD format"
     )
-    end_date: str = Field(
+    check_out: str = Field(
         description="Check-out date in YYYY-MM-DD format"
     )
     party_type: PartyType
 
 
 class AgentRequest(BaseModel):
-    """Main request model for AI Concierge"""
-    booking_context: BookingContext
-    preferences: Preferences
-    free_text_query: Optional[str] = Field(
-        default=None,
-        description="Natural language query from user"
-    )
+    """Request for AI agent itinerary generation"""
+    booking_id: int
+    user_id : int
+    free_text : Optional[str]
+    preferences: Optional[Preferences] = None
+    # user_id: int
+    # free_text: Optional[str] = 'none' # Make it truly optional with default None
+
+    # class Config:
+    #     json_schema_extra = {
+    #         "example": {
+    #             "booking_id": 1,
+    #             "user_id": 1,
+    #             "free_text": "We're vegan, traveling with 2 kids, love culture",
+    #             "preferences": {
+    #                 "budget": "medium",
+    #                 "interests": ["culture", "food"],
+    #                 "dietary_restrictions": ["vegan"],
+    #                 "mobility_needs": "none"
+    #             }
+    #         }
+    #     }
 
 
 # ============================================

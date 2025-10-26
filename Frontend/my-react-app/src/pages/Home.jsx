@@ -94,7 +94,6 @@ export default function Home() {
         {showMap ? "Show list" : "Show map"} <Map size={16} className="inline ml-1" />
       </button>
 
-
       <SectionBlock title={`Popular homes in ${city}`}>
         <div className="relative">
           <button

@@ -42,19 +42,21 @@ class AIAgentService:
         """
         Main method to generate complete travel itinerary
         """
-        booking = request.booking_context
+        booking = request.booking_id
+        user_id = request.user_id
+        free_text = request.free_text
         prefs = request.preferences
 
         print(f"\n{'='*60}")
         print(f"Generating itinerary for {booking.location}")
-        print(f"Dates: {booking.start_date} to {booking.end_date}")
+        print(f"Dates: {booking.check_in} to {booking.check_out}")
         print(f"Party: {booking.party_type.adults} adults, {booking.party_type.children} children")
         print(f"Interests: {', '.join(prefs.interests)}")
         print(f"{'='*60}\n")
 
         # Step 1: Calculate trip duration
-        start_date = datetime.strptime(booking.start_date, "%Y-%m-%d")
-        end_date = datetime.strptime(booking.end_date, "%Y-%m-%d")
+        start_date = datetime.strptime(booking.check_in, "%Y-%m-%d")
+        end_date = datetime.strptime(booking.check_out, "%Y-%m-%d")
         num_days = (end_date - start_date).days
 
         print(f"Trip duration: {num_days} days")
@@ -100,7 +102,7 @@ class AIAgentService:
 
         context = {
             'events': self.tavily.search_local_events(
-                booking.location, booking.start_date, booking.end_date
+                booking.location, booking.check_in, booking.check_out
             ),
             'pois': self.tavily.search_points_of_interest(
                 booking.location, prefs.interests, has_children, needs_wheelchair
@@ -109,7 +111,7 @@ class AIAgentService:
                 booking.location, prefs.dietary_filters, prefs.budget, has_children
             ),
             'weather': self.tavily.get_weather_forecast(
-                booking.location, booking.start_date, booking.end_date
+                booking.location, booking.check_in, booking.check_out
             ),
             'transportation': self.tavily.search_transportation(booking.location)
         }
@@ -371,7 +373,7 @@ Only return valid JSON, no other text."""
         prompt = f"""Create a packing checklist for a trip to {booking.location}.
 
 Trip details:
-- Duration: {booking.start_date} to {booking.end_date}
+- Duration: {booking.check_in} to {booking.check_out}
 - Party: {booking.party_type.adults} adults, {booking.party_type.children} children
 - Interests: {', '.join(prefs.interests)}
 - Mobility needs: {prefs.mobility_needs}

@@ -13,19 +13,17 @@ router.post("/", async (req, res) => {
   if (!property_id || !user_id || !check_in || !check_out)
     return res.status(400).json({ error: "Missing booking fields" });
 
-  // Prevent overlapping Accepted or Pending bookings
-// Prevent overlapping bookings (only consider Pending or Accepted)
-const [existing] = await db.query(
-  `SELECT * FROM bookings
-   WHERE property_id = ?
-     AND status IN ('Pending', 'Accepted')
-     AND NOT (check_out <= ? OR check_in >= ?)`,
-  [property_id, check_in, check_out]
-);
+  // Prevent overlapping bookings (only consider Pending or Accepted)
+  const [existing] = await db.query(
+    `SELECT * FROM bookings
+     WHERE property_id = ?
+       AND status IN ('Pending', 'Accepted')
+       AND NOT (check_out <= ? OR check_in >= ?)`,
+    [property_id, check_in, check_out]
+  );
 
-if (existing.length > 0)
-  return res.status(409).json({ error: "Dates already booked" });
-
+  if (existing.length > 0)
+    return res.status(409).json({ error: "Dates already booked" });
 
   await db.query(
     `INSERT INTO bookings
@@ -99,7 +97,6 @@ router.patch("/:id/cancel", async (req, res) => {
   await db.query("UPDATE bookings SET status='Cancelled' WHERE id=?", [req.params.id]);
   res.json({ message: "Booking cancelled" });
 });
-
 
 router.get("/owner/:ownerId", async (req, res) => {
   const [rows] = await db.query(
@@ -182,6 +179,100 @@ router.delete("/:id", requireAuth, async (req, res) => {
   } catch (err) {
     console.error("Error cancelling booking:", err);
     res.status(500).json({ error: "Failed to cancel booking" });
+  }
+});
+
+/* ================================
+   🤖 NEW: AI Concierge — Get upcoming bookings
+   For AI itinerary generation
+   ================================ */
+router.get("/upcoming/:userId", async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT 
+        b.id,
+        b.property_id,
+        b.user_id,
+        b.check_in,
+        b.check_out,
+        b.guests,
+        b.total_price,
+        b.status,
+        b.created_at,
+        p.title as property_title,
+        p.location,
+        p.type,
+        p.amenities,
+        p.images,
+        p.price_per_night,
+        p.bedrooms,
+        p.bathrooms
+      FROM bookings b
+      JOIN properties p ON b.property_id = p.id
+      WHERE b.user_id = ?
+        AND b.status IN ('Pending', 'Accepted')
+        AND b.check_in >= CURDATE()
+      ORDER BY b.check_in ASC`,
+      [req.params.userId]
+    );
+
+    // Format the response for AI Concierge
+    const formattedBookings = rows.map(booking => ({
+      id: booking.id,
+      property_id: booking.property_id,
+      user_id: booking.user_id,
+      check_in: booking.check_in,
+      check_out: booking.check_out,
+      guests: booking.guests,
+      total_price: booking.total_price,
+      status: booking.status,
+      property_title: booking.property_title,
+      title: booking.property_title, // Alias for compatibility
+      location: booking.location,
+      type: booking.type,
+      price_per_night: booking.price_per_night,
+      bedrooms: booking.bedrooms,
+      bathrooms: booking.bathrooms,
+      amenities: booking.amenities,
+      images: booking.images
+    }));
+
+    res.json(formattedBookings);
+  } catch (err) {
+    console.error("Error fetching upcoming bookings:", err);
+    res.status(500).json({ error: "Failed to fetch upcoming bookings" });
+  }
+});
+
+/* ================================
+   🤖 NEW: AI Concierge — Get specific booking details
+   ================================ */
+router.get("/details/:bookingId", async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT 
+        b.*,
+        p.title as property_title,
+        p.location,
+        p.type,
+        p.amenities,
+        u.name as user_name,
+        u.email as user_email
+      FROM bookings b
+      JOIN properties p ON b.property_id = p.id
+      JOIN users u ON b.user_id = u.id
+      WHERE b.id = ?`,
+      [req.params.bookingId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching booking details:", err);
+    res.status(500).json({ error: "Failed to fetch booking details" });
   }
 });
 

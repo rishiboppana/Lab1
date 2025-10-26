@@ -25,10 +25,15 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS configuration
+# CORS configuration - Allow all frontend ports
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:4000",
+        "http://localhost:5173",  # Vite default port
+        "http://localhost:5174",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -36,6 +41,7 @@ app.add_middleware(
 
 # Initialize AI Agent
 agent_service = None
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -47,6 +53,7 @@ async def startup_event():
     except Exception as e:
         print(f"❌ Failed to initialize AI Agent: {e}")
         raise
+
 
 @app.get("/")
 async def root():
@@ -61,6 +68,7 @@ async def root():
         }
     }
 
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
@@ -70,6 +78,7 @@ async def health_check():
         "timestamp": datetime.now().isoformat()
     }
 
+
 def fetch_booking_from_db(booking_id: int):
     """Fetch booking details from MySQL database"""
     try:
@@ -78,23 +87,22 @@ def fetch_booking_from_db(booking_id: int):
 
         # Fetch booking with property details
         query = """
-            SELECT 
-                b.id,
-                b.property_id,
-                b.user_id,
-                b.check_in,
-                b.check_out,
-                b.guests,
-                b.total_price,
-                b.status,
-                p.title as property_title,
-                p.location,
-                p.type,
-                p.amenities
-            FROM bookings b
-            INNER JOIN properties p ON b.property_id = p.id
-            WHERE b.id = %s
-        """
+                SELECT b.id, \
+                       b.property_id, \
+                       b.user_id, \
+                       b.check_in, \
+                       b.check_out, \
+                       b.guests, \
+                       b.total_price, \
+                       b.status, \
+                       p.title as property_title, \
+                       p.location, \
+                       p.type, \
+                       p.amenities
+                FROM bookings b
+                         INNER JOIN properties p ON b.property_id = p.id
+                WHERE b.id = %s \
+                """
 
         cursor.execute(query, (booking_id,))
         booking = cursor.fetchone()
@@ -110,6 +118,7 @@ def fetch_booking_from_db(booking_id: int):
     except Exception as e:
         print(f"Error fetching booking from database: {e}")
         raise
+
 
 @app.post("/api/concierge", response_model=AgentResponse)
 async def generate_itinerary(request: AgentRequest):
@@ -141,11 +150,16 @@ async def generate_itinerary(request: AgentRequest):
         check_in = booking_data['check_in']
         check_out = booking_data['check_out']
 
-        # Convert to datetime if they're date objects
-        if isinstance(check_in, datetime):
-            check_in = check_in.date()
-        if isinstance(check_out, datetime):
-            check_out = check_out.date()
+        # Convert to string format if they're date objects
+        if hasattr(check_in, 'strftime'):
+            check_in_str = check_in.strftime('%Y-%m-%d')
+        else:
+            check_in_str = str(check_in)
+
+        if hasattr(check_out, 'strftime'):
+            check_out_str = check_out.strftime('%Y-%m-%d')
+        else:
+            check_out_str = str(check_out)
 
         # Determine party composition
         total_guests = booking_data['guests']
@@ -173,7 +187,7 @@ async def generate_itinerary(request: AgentRequest):
         preferences = request.preferences or Preferences(
             budget='medium',
             interests=['culture', 'food', 'nature'],
-            dietary_restrictions=[],
+            dietary_restrictions = [],
             mobility_needs='none'
         )
 
@@ -222,9 +236,7 @@ async def generate_itinerary(request: AgentRequest):
 
         # Generate itinerary using AI agent
         itinerary = agent_service.generate_itinerary(
-            booking_context=booking_context,
-            preferences=preferences,
-            user_input=request.free_text
+            request.data
         )
 
         print(f"✅ Itinerary generated successfully!")
@@ -243,6 +255,7 @@ async def generate_itinerary(request: AgentRequest):
             status_code=500,
             detail=f"Failed to generate itinerary: {str(e)}"
         )
+
 
 if __name__ == "__main__":
     import uvicorn

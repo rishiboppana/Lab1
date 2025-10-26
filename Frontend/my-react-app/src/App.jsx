@@ -21,12 +21,23 @@ import AddProperty from "./pages/AddProperty";
 import EditProperty from "./pages/EditProperty";
 import Wishlist from "./pages/Wishlist";
 import OwnerBookings from "./pages/OwnerBookings.jsx";
+import AIConcierge from "./components/AIConcierge";
 
 /* ---------- Guarded route helper ---------- */
 function Protected({ children }) {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
   return children;
+}
+
+/* ---------- AI Concierge Wrapper (access auth context) ---------- */
+function AIConciergeWrapper() {
+  const { user } = useAuth();
+
+  // Only show if user is logged in and is a traveler
+  if (!user || !user.id) return null;
+
+  return <AIConcierge userId={user.id} />;
 }
 
 /* ---------- Main Application ---------- */
@@ -67,6 +78,9 @@ export default function App() {
 
       {/* Global footer */}
       <Footer />
+
+      {/* 🤖 AI Travel Concierge - Available on all pages when logged in */}
+      <AIConciergeWrapper />
     </AuthProvider>
   );
 }
