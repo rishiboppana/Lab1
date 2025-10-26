@@ -1,18 +1,17 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../api/axios";
-import { Star } from "lucide-react";
+import { Star, Home, BedDouble, Bath, Calendar } from "lucide-react";
 import toast from "react-hot-toast";
 import { DateRange } from "react-date-range";
-import { addDays } from "date-fns";
-import { format } from "date-fns";
+import { addDays, format } from "date-fns";
 import { useAuth } from "../context/AuthContext";
-
 
 export default function PropertyDetails() {
   const { id } = useParams();
   const [property, setProperty] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [newReview, setNewReview] = useState({ rating: 5, comment: "" });
   const { user } = useAuth();
 
@@ -20,19 +19,22 @@ export default function PropertyDetails() {
     { startDate: new Date(), endDate: addDays(new Date(), 3), key: "selection" },
   ]);
 
+  // ✅ Load property info and reviews
   useEffect(() => {
     async function fetchData() {
       try {
         const res = await api.get(`/properties/${id}`);
         const p = res.data.property;
+        const b = res.data.bookings || [];
 
-        // ✅ Safely parse images and amenities
+        // Parse images
         try {
           p.images = typeof p.images === "string" ? JSON.parse(p.images) : p.images;
         } catch {
           p.images = [];
         }
 
+        // Parse amenities
         try {
           p.amenities =
             typeof p.amenities === "string" && p.amenities.startsWith("[")
@@ -45,33 +47,55 @@ export default function PropertyDetails() {
         }
 
         setProperty(p);
+        setBookings(b);
 
-        // ✅ Fetch reviews
         const rev = await api.get(`/reviews/${id}`);
         setReviews(rev.data.reviews);
       } catch (err) {
         console.error(err);
-        toast.error("Failed to load property");
+        toast.error("Failed to load property details");
       }
     }
+
     fetchData();
   }, [id]);
 
-  if (!property) {
+  if (!property)
     return (
       <div className="text-center py-10 text-airbnb-gray">
         Loading property details...
       </div>
     );
-  }
 
-  // ✅ Avoid null math
   const nights =
     (range[0].endDate - range[0].startDate) / (1000 * 60 * 60 * 24);
   const total = nights * (property?.price_per_night ?? 0);
 
   const avg = property.avg_rating ?? "–";
   const count = property.review_count ?? 0;
+
+  async function handleReserve() {
+    try {
+      if (!user) return toast.error("Please log in first");
+
+      const check_in = format(range[0].startDate, "yyyy-MM-dd");
+      const check_out = format(range[0].endDate, "yyyy-MM-dd");
+
+      await api.post("/bookings", {
+        property_id: property.id,
+        user_id: user.id,
+        check_in,
+        check_out,
+      });
+
+      toast.success("Booking confirmed!");
+    } catch (err) {
+      if (err.response?.status === 400)
+        toast.error("These dates are already booked.");
+      else toast.error("Failed to create booking");
+      console.error(err);
+    }
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 mt-6">
@@ -81,7 +105,11 @@ export default function PropertyDetails() {
           property.images.slice(0, 5).map((img, i) => (
             <img
               key={i}
-              src={img.startsWith("http") ? img : `http://localhost:4000${img}`}
+              src={
+                img.startsWith("http")
+                  ? img
+                  : `http://localhost:4000${img.startsWith("/") ? img : "/" + img}`
+              }
               alt={property.title}
               onError={(e) => (e.target.src = "https://placehold.co/600x400")}
               className={`object-cover w-full h-64 ${
@@ -102,6 +130,11 @@ export default function PropertyDetails() {
       <div className="flex justify-between items-start mt-6 flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{property.title}</h1>
+          <p className="text-gray-600 flex items-center gap-2 mt-1">
+            <Home size={16} /> {property.type || "Property"} •
+            <BedDouble size={16} /> {property.bedrooms || 0} bed(s) •
+            <Bath size={16} /> {property.bathrooms || 0} bath(s)
+          </p>
           <div className="flex items-center text-sm text-gray-600 mt-1">
             <Star size={14} className="text-airbnb-red mr-1" />
             <span className="font-medium">{avg}</span>
@@ -135,44 +168,40 @@ export default function PropertyDetails() {
             </span>
           </p>
 
-        <button
-          onClick={async () => {
-          try {
-            if (!user) return toast.error("Please log in first");
+          <button
+            onClick={handleReserve}
+            className="mt-3 w-full bg-airbnb-red text-white rounded-full py-2 hover:bg-[#E31C5F] transition"
+          >
+            Reserve
+          </button>
 
-            const check_in = format(range[0].startDate, "yyyy-MM-dd");
-            const check_out = format(range[0].endDate, "yyyy-MM-dd");
-            const total_price = total;
-
-            await api.post("/bookings", {
-              property_id: property.id,
-              user_id: user.id,
-              check_in,
-              check_out,
-              total_price,
-            });
-
-            toast.success("Booking confirmed!");
-          } catch (err) {
-            if (err.response?.status === 401) return toast.error("Please log in first");
-            if (err.response?.status === 409) return toast.error("These dates are already booked.");
-            toast.error("Failed to book property.");
-            console.error(err);
-          }
-        }}
-
-          className="mt-3 w-full bg-airbnb-red text-white rounded-full py-2 hover:bg-[#E31C5F] transition"
-        >
-          Reserve
-        </button>
-
+          {/* ---------- Availability Info ---------- */}
+          <div className="mt-4 text-left">
+            <h3 className="font-semibold text-gray-700 mb-1 flex items-center gap-1">
+              <Calendar size={16} /> Booked Dates
+            </h3>
+            {bookings.length > 0 ? (
+              <ul className="text-xs text-gray-500 space-y-1 max-h-20 overflow-y-auto">
+                {bookings.map((b, i) => (
+                  <li key={i}>
+                    {format(new Date(b.check_in), "MMM d")} -{" "}
+                    {format(new Date(b.check_out), "MMM d, yyyy")}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-gray-400">No booked dates</p>
+            )}
+          </div>
         </div>
       </div>
 
       {/* ---------- Description & Amenities ---------- */}
       <div className="grid md:grid-cols-3 gap-8 mt-8">
         <div className="md:col-span-2">
-          <p className="text-gray-700 leading-relaxed">{property.description}</p>
+          <p className="text-gray-700 leading-relaxed">
+            {property.description || "No description provided by host."}
+          </p>
 
           {property.amenities?.length > 0 && (
             <div className="mt-6">
