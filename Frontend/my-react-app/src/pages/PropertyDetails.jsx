@@ -11,7 +11,8 @@ export default function PropertyDetails() {
   const { id } = useParams();
   const [property, setProperty] = useState(null);
   const [reviews, setReviews] = useState([]);
-  const [bookings, setBookings] = useState([]);
+  const [acceptedBookings, setAcceptedBookings] = useState([]); // ✅ Only accepted
+  const [myBookings, setMyBookings] = useState([]); // ✅ User's bookings (all statuses)
   const [newReview, setNewReview] = useState({ rating: 5, comment: "" });
   const { user } = useAuth();
 
@@ -19,13 +20,18 @@ export default function PropertyDetails() {
     { startDate: new Date(), endDate: addDays(new Date(), 3), key: "selection" },
   ]);
 
-  // ✅ Load property info and reviews
+  // ✅ Load property info, bookings, and reviews
   useEffect(() => {
     async function fetchData() {
       try {
+        console.log("🔍 Fetching property ID:", id);
+        console.log("👤 Current user:", user);
+
         const res = await api.get(`/properties/${id}`);
         const p = res.data.property;
-        const b = res.data.bookings || [];
+        const allBookings = res.data.bookings || [];
+
+        console.log("📦 All bookings received:", allBookings);
 
         // Parse images
         try {
@@ -47,18 +53,33 @@ export default function PropertyDetails() {
         }
 
         setProperty(p);
-        setBookings(b);
 
+        // ✅ Split bookings
+        const accepted = allBookings.filter(b => b.status === "Accepted");
+        console.log("✅ Accepted bookings (will block dates):", accepted);
+        setAcceptedBookings(accepted);
+
+        // ✅ Get user's own bookings (all statuses)
+        if (user && user.id) {
+          const userBookings = allBookings.filter(b => b.user_id === user.id);
+          console.log("👤 User's bookings:", userBookings);
+          setMyBookings(userBookings);
+        } else {
+          console.log("⚠️ No user logged in");
+          setMyBookings([]);
+        }
+
+        // Load reviews
         const rev = await api.get(`/reviews/${id}`);
         setReviews(rev.data.reviews);
       } catch (err) {
-        console.error(err);
+        console.error("❌ Error loading property:", err);
         toast.error("Failed to load property details");
       }
     }
 
     fetchData();
-  }, [id]);
+  }, [id, user]);
 
   if (!property)
     return (
@@ -74,9 +95,31 @@ export default function PropertyDetails() {
   const avg = property.avg_rating ?? "–";
   const count = property.review_count ?? 0;
 
+  // ✅ Check if selected dates overlap with ACCEPTED bookings
+  const isDateBlocked = () => {
+    const { startDate, endDate } = range[0];
+
+    return acceptedBookings.some((booking) => {
+      const bookingStart = new Date(booking.check_in);
+      const bookingEnd = new Date(booking.check_out);
+
+      // Check if there's any overlap
+      return (
+        (startDate >= bookingStart && startDate < bookingEnd) ||
+        (endDate > bookingStart && endDate <= bookingEnd) ||
+        (startDate <= bookingStart && endDate >= bookingEnd)
+      );
+    });
+  };
+
   async function handleReserve() {
     try {
       if (!user) return toast.error("Please log in first");
+
+      // ✅ Check if dates are blocked
+      if (isDateBlocked()) {
+        return toast.error("These dates are already booked. Please choose different dates.");
+      }
 
       const check_in = format(range[0].startDate, "yyyy-MM-dd");
       const check_out = format(range[0].endDate, "yyyy-MM-dd");
@@ -88,7 +131,19 @@ export default function PropertyDetails() {
         check_out,
       });
 
-      toast.success("Booking confirmed!");
+      toast.success("Booking request sent! Waiting for owner approval.");
+
+      // ✅ Reload data
+      const res = await api.get(`/properties/${id}`);
+      const allBookings = res.data.bookings || [];
+
+      const accepted = allBookings.filter(b => b.status === "Accepted");
+      setAcceptedBookings(accepted);
+
+      if (user && user.id) {
+        const userBookings = allBookings.filter(b => b.user_id === user.id);
+        setMyBookings(userBookings);
+      }
     } catch (err) {
       if (err.response?.status === 400)
         toast.error("These dates are already booked.");
@@ -96,6 +151,23 @@ export default function PropertyDetails() {
       console.error(err);
     }
   }
+
+  // ✅ Generate disabled dates from ACCEPTED bookings only
+  const disabledDates = acceptedBookings.flatMap((booking) => {
+    const start = new Date(booking.check_in);
+    const end = new Date(booking.check_out);
+    const dates = [];
+
+    let current = new Date(start);
+    while (current < end) { // Changed <= to < (don't include checkout day)
+      dates.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+
+    return dates;
+  });
+
+  console.log("🚫 Disabled dates:", disabledDates);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 mt-6">
@@ -158,6 +230,8 @@ export default function PropertyDetails() {
             moveRangeOnFirstSelection={false}
             ranges={range}
             rangeColors={["#FF385C"]}
+            minDate={new Date()}
+            disabledDates={disabledDates}
             className="mt-2"
           />
 
@@ -170,19 +244,70 @@ export default function PropertyDetails() {
 
           <button
             onClick={handleReserve}
-            className="mt-3 w-full bg-airbnb-red text-white rounded-full py-2 hover:bg-[#E31C5F] transition"
+            disabled={isDateBlocked()}
+            className={`mt-3 w-full rounded-full py-2 transition ${
+              isDateBlocked()
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-airbnb-red text-white hover:bg-[#E31C5F]"
+            }`}
           >
-            Reserve
+            {isDateBlocked() ? "Dates Not Available" : "Reserve"}
           </button>
 
-          {/* ---------- Availability Info ---------- */}
-          <div className="mt-4 text-left">
+          {/* ---------- User's Own Bookings ---------- */}
+          {myBookings.length > 0 && (
+            <div className="mt-4 text-left border-t pt-3">
+              <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                <Calendar size={16} /> Your Bookings
+              </h3>
+              <ul className="text-xs space-y-2">
+                {myBookings.map((b) => (
+                  <li
+                    key={b.id}
+                    className={`p-2 rounded ${
+                      b.status === "Pending"
+                        ? "bg-yellow-50 border border-yellow-200"
+                        : b.status === "Accepted"
+                        ? "bg-green-50 border border-green-200"
+                        : "bg-red-50 border border-red-200"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <span className="text-gray-700">
+                        {format(new Date(b.check_in), "MMM d")} -{" "}
+                        {format(new Date(b.check_out), "MMM d, yyyy")}
+                      </span>
+                      <span
+                        className={`text-xs font-semibold ${
+                          b.status === "Pending"
+                            ? "text-yellow-600"
+                            : b.status === "Accepted"
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {b.status}
+                      </span>
+                    </div>
+                    {b.status === "Pending" && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        ⏳ Waiting for owner approval
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* ---------- Accepted Bookings (Busy Dates) ---------- */}
+          <div className="mt-4 text-left border-t pt-3">
             <h3 className="font-semibold text-gray-700 mb-1 flex items-center gap-1">
-              <Calendar size={16} /> Booked Dates
+              <Calendar size={16} /> Unavailable Dates
             </h3>
-            {bookings.length > 0 ? (
+            {acceptedBookings.length > 0 ? (
               <ul className="text-xs text-gray-500 space-y-1 max-h-20 overflow-y-auto">
-                {bookings.map((b, i) => (
+                {acceptedBookings.map((b, i) => (
                   <li key={i}>
                     {format(new Date(b.check_in), "MMM d")} -{" "}
                     {format(new Date(b.check_out), "MMM d, yyyy")}
@@ -190,7 +315,7 @@ export default function PropertyDetails() {
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-gray-400">No booked dates</p>
+              <p className="text-xs text-gray-400">All dates available</p>
             )}
           </div>
         </div>
@@ -244,52 +369,54 @@ export default function PropertyDetails() {
         </div>
 
         {/* ---------- Add Review ---------- */}
-        <div className="mt-6">
-          <h3 className="font-medium mb-2">Leave a review</h3>
-          <select
-            value={newReview.rating}
-            onChange={(e) =>
-              setNewReview({ ...newReview, rating: parseInt(e.target.value) })
-            }
-            className="border rounded px-2 py-1 mr-2"
-          >
-            {[5, 4, 3, 2, 1].map((v) => (
-              <option key={v} value={v}>
-                {v} stars
-              </option>
-            ))}
-          </select>
-          <textarea
-            placeholder="Share your experience..."
-            className="border rounded w-full p-2 mt-2"
-            value={newReview.comment}
-            onChange={(e) =>
-              setNewReview({ ...newReview, comment: e.target.value })
-            }
-          />
-          <button
-            onClick={async () => {
-              try {
-                if (!user) return toast.error("Please log in first");
-                await api.post("/reviews", {
-                  property_id: property.id,
-                  user_id: user.id,
-                  rating: newReview.rating,
-                  comment: newReview.comment,
-                });
-                toast.success("Review added!");
-                const { data } = await api.get(`/reviews/${property.id}`);
-                setReviews(data.reviews);
-                setNewReview({ rating: 5, comment: "" });
-              } catch {
-                toast.error("Failed to add review");
+        {user && (
+          <div className="mt-6">
+            <h3 className="font-medium mb-2">Leave a review</h3>
+            <select
+              value={newReview.rating}
+              onChange={(e) =>
+                setNewReview({ ...newReview, rating: parseInt(e.target.value) })
               }
-            }}
-            className="mt-2 bg-airbnb-red text-white px-4 py-2 rounded-full hover:bg-[#E31C5F]"
-          >
-            Submit
-          </button>
-        </div>
+              className="border rounded px-2 py-1 mr-2"
+            >
+              {[5, 4, 3, 2, 1].map((v) => (
+                <option key={v} value={v}>
+                  {v} stars
+                </option>
+              ))}
+            </select>
+            <textarea
+              placeholder="Share your experience..."
+              className="border rounded w-full p-2 mt-2"
+              value={newReview.comment}
+              onChange={(e) =>
+                setNewReview({ ...newReview, comment: e.target.value })
+              }
+            />
+            <button
+              onClick={async () => {
+                try {
+                  if (!user) return toast.error("Please log in first");
+                  await api.post("/reviews", {
+                    property_id: property.id,
+                    user_id: user.id,
+                    rating: newReview.rating,
+                    comment: newReview.comment,
+                  });
+                  toast.success("Review added!");
+                  const { data } = await api.get(`/reviews/${property.id}`);
+                  setReviews(data.reviews);
+                  setNewReview({ rating: 5, comment: "" });
+                } catch {
+                  toast.error("Failed to add review");
+                }
+              }}
+              className="mt-2 bg-airbnb-red text-white px-4 py-2 rounded-full hover:bg-[#E31C5F]"
+            >
+              Submit
+            </button>
+          </div>
+        )}
       </section>
     </div>
   );

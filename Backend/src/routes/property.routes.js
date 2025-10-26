@@ -63,28 +63,42 @@ r.get("/search", async (req, res) => {
 });
 
 //  Get single property with avg rating + review count
+// In your property.routes.js (or wherever you have the GET /properties/:id route)
+
 r.get("/:id", async (req, res) => {
   try {
     const [rows] = await db.query(
-      `
-      SELECT p.*,
-             CAST(ROUND(AVG(r.rating),1) AS DECIMAL(2,1)) AS avg_rating,
-             COUNT(r.id) AS review_count
-        FROM properties p
-        LEFT JOIN reviews r ON p.id = r.property_id
+      `SELECT p.*,
+              CAST(ROUND(AVG(r.rating), 1) AS DECIMAL(2,1)) AS avg_rating,
+              COUNT(DISTINCT r.id) AS review_count
+       FROM properties p
+       LEFT JOIN reviews r ON p.id = r.property_id
        WHERE p.id = ?
-       GROUP BY p.id
-    `,
+       GROUP BY p.id`,
       [req.params.id]
     );
 
-    if (!rows.length)
+    if (!rows.length) {
       return res.status(404).json({ error: "Property not found" });
+    }
 
-    res.json({ property: rows[0] });
+    const property = rows[0];
+
+    // ✅ Get ALL bookings for this property (with status and user_id)
+    const [bookings] = await db.query(
+      `SELECT id, user_id, check_in, check_out, status, total_price
+       FROM bookings
+       WHERE property_id = ?
+       ORDER BY check_in ASC`,
+      [req.params.id]
+    );
+
+    console.log("📅 All bookings for property:", bookings);
+
+    res.json({ property, bookings });
   } catch (err) {
     console.error("Error fetching property:", err);
-    res.status(500).json({ error: "Database error" });
+    res.status(500).json({ error: "Failed to fetch property" });
   }
 });
 
