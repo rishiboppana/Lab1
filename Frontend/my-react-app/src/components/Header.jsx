@@ -1,8 +1,7 @@
-// src/components/Header.jsx
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useRef, useState } from "react";
-import { Globe, Menu, User } from "lucide-react";
+import { Menu, User } from "lucide-react";
 import toast from "react-hot-toast";
 import { api } from "../api/axios.js";
 
@@ -32,9 +31,9 @@ export default function Header() {
   async function handleBecomeHost() {
     try {
       const { data } = await api.post("/auth/become-host", {}, { withCredentials: true });
-      setUser(data.user); // update context
+      setUser(data.user);
       toast.success("You are now a host!");
-      navigate("/post"); // redirect to Post Property page
+      navigate("/post");
     } catch (err) {
       toast.error(err.response?.data?.error || "Failed to become host");
     }
@@ -42,43 +41,34 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b">
-      <div className="max-w-6xl mx-auto flex justify-between items-center h-16 px-6">
+      <div className="max-w-6xl mx-auto flex justify-between items-center h-16 px-4 sm:px-6">
         <Link to="/" className="flex items-center gap-1">
-          <span className="text-airbnb-red font-extrabold text-2xl">airbnb</span>
+          <span className="text-airbnb-red font-extrabold text-xl sm:text-2xl">airbnb</span>
         </Link>
 
-        {/*<SearchPill />*/}
-
-        <div className="flex items-center gap-4">
-          {/* Only show "Become a host" if user is logged in AND role is NOT owner */}
+        <div className="flex items-center gap-2 sm:gap-4">
           {user && user.role !== "owner" && (
             <button
               onClick={handleBecomeHost}
-              className="text-sm font-semibold hover:bg-gray-50 rounded-full px-4 py-2 transition"
+              className="text-xs sm:text-sm font-semibold hover:bg-gray-50 rounded-full px-3 sm:px-4 py-2 transition"
             >
               Become a Host
             </button>
           )}
 
-          {/* Show "Airbnb your home" if user is already an owner */}
           {user && user.role === "owner" && (
             <Link
               to="/add-property"
-              className="text-sm font-semibold hover:bg-gray-50 rounded-full px-4 py-2 transition"
+              className="text-xs sm:text-sm font-semibold hover:bg-gray-50 rounded-full px-3 sm:px-4 py-2 transition"
             >
               Airbnb your home
             </Link>
           )}
 
-          <button className="hidden md:grid place-items-center w-9 h-9 rounded-full hover:bg-gray-100">
-            <Globe size={18} />
-          </button>
-
-          {/* Profile dropdown */}
           <div className="relative" ref={ref}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="flex items-center gap-2 border rounded-full px-3 py-1.5 hover:shadow-md transition"
+              className="flex items-center gap-2 border rounded-full px-2 sm:px-3 py-1.5 hover:shadow-md transition"
             >
               <Menu size={16} />
               <User size={18} className="text-gray-500" />
@@ -138,21 +128,5 @@ export default function Header() {
         </div>
       </div>
     </header>
-  );
-}
-
-function SearchPill() {
-  return (
-    <button
-      className="hidden md:flex items-center justify-between rounded-full border py-2 px-4 hover:shadow-md transition text-sm space-x-4 bg-white"
-    >
-      <span className="font-medium border-r pr-4 text-black">Where</span>
-      <span className="text-gray-600 border-r pr-4">Check in</span>
-      <span className="text-gray-600 border-r pr-4">Check out</span>
-      <span className="text-gray-600">Who</span>
-      <div className="ml-2 bg-airbnb-red text-white rounded-full w-8 h-8 grid place-items-center">
-        🔍
-      </div>
-    </button>
   );
 }

@@ -2,8 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { api } from "../api/axios";
 import PropertyCard from "../components/PropertyCard";
 import SearchBar from "../components/SearchBar";
-import { Map, ChevronLeft, ChevronRight } from "lucide-react";
-import MapView from "../components/MapView";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import SkeletonCard from "../components/SkeletonCard.jsx";
 
 export default function Home() {
@@ -11,7 +10,6 @@ export default function Home() {
   const [popular, setPopular] = useState([]);
   const [groupedProperties, setGroupedProperties] = useState({});
   const [loading, setLoading] = useState(true);
-  const [showMap, setShowMap] = useState(false);
 
   const scrollRefs = useRef({});
 
@@ -25,7 +23,6 @@ export default function Home() {
     });
   };
 
-  // Group properties by location
   const groupPropertiesByLocation = (properties) => {
     const grouped = {};
     properties.forEach((property) => {
@@ -64,7 +61,6 @@ export default function Home() {
     }
   }
 
-  // initial load
   useEffect(() => {
     (async () => {
       const userCity = await getUserCity();
@@ -94,7 +90,7 @@ export default function Home() {
 
   if (loading)
     return (
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-4 py-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-4 py-6">
         {Array.from({ length: 8 }).map((_, i) => (
           <SkeletonCard key={i} />
         ))}
@@ -102,65 +98,45 @@ export default function Home() {
     );
 
   return (
-    <div className="max-w-[1760px] mx-auto px-6 sm:px-10 md:px-20 relative pb-20">
-      {/* Search Bar */}
-      <div className="sticky top-[72px] bg-white z-40 py-4 -mx-6 px-6">
+    <div className="max-w-[1760px] mx-auto px-4 sm:px-6 md:px-10 lg:px-20 relative pb-20">
+      <div className="sticky top-[72px] bg-white z-40 py-4 -mx-4 px-4 sm:-mx-6 sm:px-6 md:-mx-10 md:px-10">
         <SearchBar onSearch={handleSearch} />
       </div>
 
-      {/* Map Toggle Button */}
-      <button
-        onClick={() => setShowMap(!showMap)}
-        className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-xl hover:bg-gray-800 transition-all z-50 flex items-center gap-2"
-      >
-        <Map size={18} />
-        <span className="font-medium">{showMap ? "Show list" : "Show map"}</span>
-      </button>
-
-      {/* Grouped Properties by Location */}
       {Object.keys(groupedProperties).length > 0 ? (
         Object.entries(groupedProperties).map(([location, properties]) => (
           <div key={location} className="mb-12">
-            {/* Section Header */}
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-semibold text-gray-900">
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">
                 {location}
                 <span className="ml-2 text-lg font-normal text-gray-600">›</span>
               </h2>
             </div>
 
-            {/* Scrollable Property Cards */}
             <div className="relative group/section">
-              {/* Left Scroll Button */}
               {properties.length > 4 && (
                 <button
                   onClick={() => scroll(location, "left")}
-                  className="absolute left-0 top-1/3 -translate-y-1/2 z-10 bg-white border border-gray-300 shadow-lg rounded-full p-2.5 opacity-0 group-hover/section:opacity-100 hover:scale-110 transition-all"
+                  className="absolute left-0 top-1/3 -translate-y-1/2 z-10 bg-white border border-gray-300 shadow-lg rounded-full p-2.5 opacity-0 group-hover/section:opacity-100 hover:scale-110 transition-all hidden sm:block"
                   aria-label="Scroll left"
                 >
                   <ChevronLeft size={16} strokeWidth={2.5} />
                 </button>
               )}
 
-              {/* Right Scroll Button */}
               {properties.length > 4 && (
                 <button
                   onClick={() => scroll(location, "right")}
-                  className="absolute right-0 top-1/3 -translate-y-1/2 z-10 bg-white border border-gray-300 shadow-lg rounded-full p-2.5 opacity-0 group-hover/section:opacity-100 hover:scale-110 transition-all"
+                  className="absolute right-0 top-1/3 -translate-y-1/2 z-10 bg-white border border-gray-300 shadow-lg rounded-full p-2.5 opacity-0 group-hover/section:opacity-100 hover:scale-110 transition-all hidden sm:block"
                   aria-label="Scroll right"
                 >
                   <ChevronRight size={16} strokeWidth={2.5} />
                 </button>
               )}
 
-              {/* Scrollable Container */}
               <div
                 ref={(el) => (scrollRefs.current[location] = el)}
                 className="flex gap-4 overflow-x-auto scroll-smooth pb-4 hide-scrollbar"
-                style={{
-                  scrollbarWidth: "none",
-                  msOverflowStyle: "none",
-                }}
               >
                 {properties.map((p) => (
                   <PropertyCard key={p.id} p={p} />
@@ -175,14 +151,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Map View */}
-      {showMap && (
-        <div className="mt-8">
-          <MapView listings={popular} />
-        </div>
-      )}
-
-      {/* Hide scrollbar */}
       <style jsx>{`
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
