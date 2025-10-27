@@ -3,7 +3,7 @@ ORIGIN=http://localhost:5173
 
 DB_HOST=127.0.0.1
 DB_USER=root
-DB_PASS=1234
+DB_PASS=Kapil@123
 DB_NAME=airbnb
 
 SESSION_SECRET=supersecret
