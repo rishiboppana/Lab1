@@ -1,6 +1,8 @@
 # Frontend :
 cd Frontend/my-react-app
+
 npm install
+
 npm run dev
 
 got to http://localhost:5173/
