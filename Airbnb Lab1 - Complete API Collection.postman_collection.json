@@ -1,0 +1,1155 @@
+{
+	"info": {
+		"_postman_id": "2cacc006-0d80-422e-8060-4fb6d2f8b861",
+		"name": "Airbnb Lab1 - Complete API Collection",
+		"description": "Complete API testing for Airbnb prototype backend",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "49394239",
+		"_collection_link": "https://rishivisweswar-boppana-2478662.postman.co/workspace/Rishi's-Workspace~d78fd0ce-4d53-4c5d-8098-d419e6b64466/collection/49394239-2cacc006-0d80-422e-8060-4fb6d2f8b861?action=share&source=collection_link&creator=49394239"
+	},
+	"item": [
+		{
+			"name": "1. Authentication",
+			"item": [
+				{
+					"name": "1.1 Signup - Traveler",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.user && jsonData.user.id) {",
+									"        pm.collectionVariables.set('userId', jsonData.user.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Traveler\",\n  \"email\": \"john.traveler@test.com\",\n  \"password\": \"password123\",\n  \"role\": \"traveler\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/signup",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"signup"
+							]
+						},
+						"description": "Traveler signup with name, email, and password (bcrypt hashed)"
+					},
+					"response": []
+				},
+				{
+					"name": "1.2 Signup - Owner",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.user && jsonData.user.id) {",
+									"        pm.collectionVariables.set('ownerId', jsonData.user.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Jane Owner\",\n  \"email\": \"jane.owner@test.com\",\n  \"password\": \"password123\",\n  \"role\": \"owner\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/signup",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"signup"
+							]
+						},
+						"description": "Owner signup with name, email, password, and location"
+					},
+					"response": []
+				},
+				{
+					"name": "1.3 Login - Traveler",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Session cookie is set', function () {",
+									"    pm.expect(pm.cookies.has('sid')).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"john.traveler@test.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login with email and password - session-based authentication"
+					},
+					"response": []
+				},
+				{
+					"name": "1.4 Login - Owner",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"jane.owner@test.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Owner login"
+					},
+					"response": []
+				},
+				{
+					"name": "1.5 Get Current User (Me)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"me"
+							]
+						},
+						"description": "Get currently logged-in user info from session"
+					},
+					"response": []
+				},
+				{
+					"name": "1.6 Become Host (Traveler → Owner)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/become-host",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"become-host"
+							]
+						},
+						"description": "Convert traveler account to owner/host account"
+					},
+					"response": []
+				},
+				{
+					"name": "1.7 Logout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Destroy session and logout"
+					},
+					"response": []
+				}
+			],
+			"description": "User authentication endpoints - Signup, Login, Logout"
+		},
+		{
+			"name": "2. Profile Management",
+			"item": [
+				{
+					"name": "2.1 Get Profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"profile"
+							]
+						},
+						"description": "Get current user's profile details"
+					},
+					"response": []
+				},
+				{
+					"name": "2.2 Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Updated\",\n  \"phone\": \"+1-415-555-0123\",\n  \"about\": \"I love traveling and exploring new places!\",\n  \"city\": \"San Francisco\",\n  \"country\": \"USA\",\n  \"languages\": \"English, Spanish\",\n  \"gender\": \"Male\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"profile"
+							]
+						},
+						"description": "Update profile: name, email, phone, about, city, country (dropdown), languages, gender"
+					},
+					"response": []
+				},
+				{
+					"name": "2.3 Upload Profile Picture (Avatar)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "avatar",
+									"description": "Upload profile image",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/profile/avatar",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"profile",
+								"avatar"
+							]
+						},
+						"description": "Upload profile picture"
+					},
+					"response": []
+				}
+			],
+			"description": "Profile management - View and update user profile"
+		},
+		{
+			"name": "3. Property Management",
+			"item": [
+				{
+					"name": "3.1 Search Properties (All)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/properties/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"properties",
+								"search"
+							]
+						},
+						"description": "Get all available properties"
+					},
+					"response": []
+				},
+				{
+					"name": "3.2 Search Properties (By Location)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/properties/search?location=San Francisco",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"properties",
+								"search"
+							],
+							"query": [
+								{
+									"key": "location",
+									"value": "San Francisco"
+								}
+							]
+						},
+						"description": "Search properties by location"
+					},
+					"response": []
+				},
+				{
+					"name": "3.3 Search Properties (By Date & Guests)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/properties/search?location=Miami&startDate=2025-11-01&endDate=2025-11-05&guests=2",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"properties",
+								"search"
+							],
+							"query": [
+								{
+									"key": "location",
+									"value": "Miami"
+								},
+								{
+									"key": "startDate",
+									"value": "2025-11-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2025-11-05"
+								},
+								{
+									"key": "guests",
+									"value": "2"
+								}
+							]
+						},
+						"description": "Search by location, dates, and number of guests"
+					},
+					"response": []
+				},
+				{
+					"name": "3.4 Get Single Property Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Property has bookings array', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('bookings');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/properties/{{propertyId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"properties",
+								"{{propertyId}}"
+							]
+						},
+						"description": "Get property details including name, type, amenities, pricing, availability, and bookings"
+					},
+					"response": []
+				},
+				{
+					"name": "3.5 Create Property (Owner)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.property && jsonData.property.id) {",
+									"        pm.collectionVariables.set('propertyId', jsonData.property.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Beautiful Beach House",
+									"type": "text"
+								},
+								{
+									"key": "type",
+									"value": "House",
+									"type": "text"
+								},
+								{
+									"key": "location",
+									"value": "Miami Beach, FL",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Stunning ocean view property with direct beach access. Perfect for families and groups!",
+									"type": "text"
+								},
+								{
+									"key": "price_per_night",
+									"value": "250",
+									"type": "text"
+								},
+								{
+									"key": "bedrooms",
+									"value": "3",
+									"type": "text"
+								},
+								{
+									"key": "bathrooms",
+									"value": "2",
+									"type": "text"
+								},
+								{
+									"key": "amenities",
+									"value": "WiFi,Pool,Kitchen,Air Conditioning,Beach Access",
+									"description": "Comma-separated amenities",
+									"type": "text"
+								},
+								{
+									"key": "images",
+									"description": "Upload up to 5 images",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/properties",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"properties"
+							]
+						},
+						"description": "Post property for rent with location, description, photos, pricing, amenities, availability"
+					},
+					"response": []
+				},
+				{
+					"name": "3.6 Update Property (Add Images)",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Beautiful Beach House - UPDATED",
+									"type": "text"
+								},
+								{
+									"key": "price_per_night",
+									"value": "300",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Newly renovated with modern amenities!",
+									"type": "text"
+								},
+								{
+									"key": "imageAction",
+									"value": "add",
+									"description": "add or replace",
+									"type": "text"
+								},
+								{
+									"key": "existingImages",
+									"value": "[]",
+									"description": "JSON array of images to keep",
+									"type": "text"
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/properties/{{propertyId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"properties",
+								"{{propertyId}}"
+							]
+						},
+						"description": "Update property details (max 5 images total)"
+					},
+					"response": []
+				},
+				{
+					"name": "3.7 Update Property (Replace Images)",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Luxury Beachfront Villa",
+									"type": "text"
+								},
+								{
+									"key": "imageAction",
+									"value": "replace",
+									"type": "text"
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/properties/{{propertyId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"properties",
+								"{{propertyId}}"
+							]
+						},
+						"description": "Replace all property images"
+					},
+					"response": []
+				},
+				{
+					"name": "3.8 Delete Property",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/properties/{{propertyId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"properties",
+								"{{propertyId}}"
+							]
+						},
+						"description": "Delete a property (owner only)"
+					},
+					"response": []
+				},
+				{
+					"name": "3.9 Get Owner's Properties",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/properties/owner/list",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"properties",
+								"owner",
+								"list"
+							]
+						},
+						"description": "List all properties owned by logged-in user"
+					},
+					"response": []
+				}
+			],
+			"description": "Property CRUD operations and search"
+		},
+		{
+			"name": "4. Booking Management",
+			"item": [
+				{
+					"name": "4.1 Create Booking (Traveler)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.test('Booking created with Pending status', function () {",
+									"        pm.expect(jsonData.message).to.include('Pending');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"property_id\": {{propertyId}},\n  \"user_id\": {{userId}},\n  \"check_in\": \"2025-11-15\",\n  \"check_out\": \"2025-11-20\",\n  \"total_price\": 1250,\n  \"guests\": 3\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/bookings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"bookings"
+							]
+						},
+						"description": "Create booking request (starts in PENDING state)"
+					},
+					"response": []
+				},
+				{
+					"name": "4.2 Get User Bookings (Traveler)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/bookings/user/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"bookings",
+								"user",
+								"{{userId}}"
+							]
+						},
+						"description": "Get all bookings for a specific traveler"
+					},
+					"response": []
+				},
+				{
+					"name": "4.3 Get My Trips (Traveler History)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/bookings/my-trips",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"bookings",
+								"my-trips"
+							]
+						},
+						"description": "Traveler history tab - all previous bookings/trips"
+					},
+					"response": []
+				},
+				{
+					"name": "4.4 Get Owner Bookings (Incoming Requests)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/bookings/owner",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"bookings",
+								"owner"
+							]
+						},
+						"description": "View incoming booking requests for owner's properties"
+					},
+					"response": []
+				},
+				{
+					"name": "4.5 Get Owner Bookings by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/bookings/owner/{{ownerId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"bookings",
+								"owner",
+								"{{ownerId}}"
+							]
+						},
+						"description": "Get all bookings for a specific owner"
+					},
+					"response": []
+				},
+				{
+					"name": "4.6 Accept Booking (Owner)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Booking accepted', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.include('accepted');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/bookings/{{bookingId}}/accept",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"bookings",
+								"{{bookingId}}",
+								"accept"
+							]
+						},
+						"description": "Accept booking → status changes to ACCEPTED, blocks property dates"
+					},
+					"response": []
+				},
+				{
+					"name": "4.7 Cancel Booking (Owner)",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/bookings/{{bookingId}}/cancel",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"bookings",
+								"{{bookingId}}",
+								"cancel"
+							]
+						},
+						"description": "Cancel booking → status changes to CANCELLED, releases dates"
+					},
+					"response": []
+				},
+				{
+					"name": "4.8 Cancel Booking (Traveler)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/bookings/{{bookingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"bookings",
+								"{{bookingId}}"
+							]
+						},
+						"description": "Traveler cancels their own booking"
+					},
+					"response": []
+				},
+				{
+					"name": "4.9 Get Upcoming Bookings (AI Context)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/bookings/upcoming/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"bookings",
+								"upcoming",
+								"{{userId}}"
+							]
+						},
+						"description": "Get upcoming bookings for AI Concierge Agent context"
+					},
+					"response": []
+				},
+				{
+					"name": "4.10 Get Booking Details (AI Context)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/bookings/details/{{bookingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"bookings",
+								"details",
+								"{{bookingId}}"
+							]
+						},
+						"description": "Get specific booking details for AI processing"
+					},
+					"response": []
+				}
+			],
+			"description": "Booking flow - Create, View, Accept, Cancel"
+		},
+		{
+			"name": "5. Favorites",
+			"item": [
+				{
+					"name": "5.1 Get Favorites",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/favorites",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"favorites"
+							]
+						},
+						"description": "Display favorites tab with marked properties"
+					},
+					"response": []
+				},
+				{
+					"name": "5.2 Toggle Favorite (Add/Remove)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"property_id\": {{propertyId}}\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/favorites/toggle",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"favorites",
+								"toggle"
+							]
+						},
+						"description": "Mark/unmark property as favorite"
+					},
+					"response": []
+				}
+			],
+			"description": "Favorites management"
+		},
+		{
+			"name": "6. Reviews",
+			"item": [
+				{
+					"name": "6.1 Get Property Reviews",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/reviews/{{propertyId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"reviews",
+								"{{propertyId}}"
+							]
+						},
+						"description": "Get all reviews for a property"
+					},
+					"response": []
+				},
+				{
+					"name": "6.2 Create Review",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"property_id\": {{propertyId}},\n  \"user_id\": {{userId}},\n  \"rating\": 5,\n  \"comment\": \"Amazing property! The beach view was breathtaking and the host was very accommodating.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/reviews",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"reviews"
+							]
+						},
+						"description": "Add a review for a property"
+					},
+					"response": []
+				},
+				{
+					"name": "6.3 Delete Review",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/reviews/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"reviews",
+								"1"
+							]
+						},
+						"description": "Delete a review (review owner or admin)"
+					},
+					"response": []
+				}
+			],
+			"description": "Property reviews"
+		},
+		{
+			"name": "7. Owner Dashboard",
+			"item": [
+				{
+					"name": "7.1 Get Owner Properties",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/owner/properties/{{ownerId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"owner",
+								"properties",
+								"{{ownerId}}"
+							]
+						},
+						"description": "Owner dashboard - view all owned properties with ratings"
+					},
+					"response": []
+				},
+				{
+					"name": "7.2 Get Owner Bookings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/owner/bookings/{{ownerId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"owner",
+								"bookings",
+								"{{ownerId}}"
+							]
+						},
+						"description": "Owner dashboard - show previous bookings and recent requests"
+					},
+					"response": []
+				},
+				{
+					"name": "7.3 Delete Owner Property",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/owner/property/{{propertyId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"owner",
+								"property",
+								"{{propertyId}}"
+							]
+						},
+						"description": "Delete property from owner dashboard"
+					},
+					"response": []
+				}
+			],
+			"description": "Owner dashboard endpoints"
+		},
+		{
+			"name": "8. Utilities",
+			"item": [
+				{
+					"name": "8.1 Get Location",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/location",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"location"
+							]
+						},
+						"description": "Get user's location based on IP"
+					},
+					"response": []
+				},
+				{
+					"name": "8.2 Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check if backend is running"
+					},
+					"response": []
+				}
+			],
+			"description": "Utility endpoints"
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:4000/api",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "ownerId",
+			"value": "2",
+			"type": "string"
+		},
+		{
+			"key": "propertyId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "bookingId",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}
