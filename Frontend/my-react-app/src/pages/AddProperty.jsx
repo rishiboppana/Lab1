@@ -15,6 +15,7 @@ export default function AddProperty() {
     price_per_night: "",
     bedrooms: 1,
     bathrooms: 1,
+    number_of_guests: 1,  // ✅ ADDED - New field for guest capacity
     description: "",
     amenities: "",
     images: [],
@@ -107,6 +108,19 @@ export default function AddProperty() {
             onChange={handleChange}
             className="border rounded p-2"
           />
+          <input
+            name="number_of_guests"
+            type="number"
+            placeholder="Number of Guests"
+            value={form.number_of_guests}
+            onChange={handleChange}
+            className="border rounded p-2"
+            min="1"
+            required
+          />
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-3">
           <input
             name="amenities"
             placeholder="Amenities (comma separated)"

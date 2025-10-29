@@ -14,15 +14,12 @@ export default function SearchBar({ onSearch }) {
   ]);
 
   const handleSearch = () => {
-    if (!searchText.trim()) {
-      alert("Please enter a location");
-      return;
-    }
+    // ✅ CHANGED: Location is now optional - can search by guests/price only
     onSearch({
-      location: searchText.trim(),
+      location: searchText.trim(),  // Can be empty
       startDate: range[0].startDate,
       endDate: range[0].endDate,
-      guests,
+      number_of_guests: guests,  // ✅ CHANGED: Use number_of_guests (not guests) to match backend
     });
     setShowCalendar(false);
     setShowGuests(false);
@@ -48,7 +45,7 @@ export default function SearchBar({ onSearch }) {
             <input
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              placeholder="Search destinations"
+              placeholder="Search destinations (optional)"
               className="w-full text-sm text-gray-900 outline-none bg-transparent placeholder-gray-400 border-0"
             />
           </div>
@@ -144,7 +141,7 @@ export default function SearchBar({ onSearch }) {
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-            placeholder="Where to?"
+            placeholder="Where to? (optional)"
             className="flex-1 text-xs text-gray-900 outline-none bg-transparent placeholder-gray-400 border-0"
           />
           {searchText && (

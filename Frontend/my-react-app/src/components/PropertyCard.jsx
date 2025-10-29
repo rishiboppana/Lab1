@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import FavoriteButton from "./FavoriteButton";
-import { Star, MapPin } from "lucide-react";
+import { Star, MapPin, Users } from "lucide-react";
 
 export default function PropertyCard({ p }) {
   // Parse images properly
@@ -77,9 +77,18 @@ export default function PropertyCard({ p }) {
         </div>
 
         {/* Location */}
-        <p className="text-sm text-gray-600 line-clamp-1">
+        <p className="text-sm text-gray-600 line-clamp-1 flex items-center gap-1">
+          <MapPin size={14} />
           {p.location}
         </p>
+
+        {/* Guest Capacity - NEW */}
+        {p.number_of_guests && (
+          <p className="text-sm text-gray-600 flex items-center gap-1">
+            <Users size={14} />
+            {p.number_of_guests} {p.number_of_guests === 1 ? "guest" : "guests"}
+          </p>
+        )}
 
         {/* Review Count */}
         {rating && reviewCount > 0 && (

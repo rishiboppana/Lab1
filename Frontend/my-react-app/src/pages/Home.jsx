@@ -3,6 +3,7 @@ import { api } from "../api/axios";
 import PropertyCard from "../components/PropertyCard";
 import SearchBar from "../components/SearchBar";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function Home() {
   const [city, setCity] = useState("your area");
@@ -11,6 +12,7 @@ export default function Home() {
   const [searchActive, setSearchActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [screenSize, setScreenSize] = useState("lg");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const scrollRefs = useRef({});
 
@@ -32,11 +34,10 @@ export default function Home() {
     const container = scrollRefs.current[location];
     if (!container) return;
 
-    // Adjust scroll amount based on screen size
-    let scrollAmount = 350; // Default for desktop
-    if (screenSize === "sm") scrollAmount = 280; // Mobile: 1 card + gap
-    else if (screenSize === "md") scrollAmount = 320; // Tablet: 1.5 cards
-    else scrollAmount = 380; // Desktop: 2 cards
+    let scrollAmount = 350;
+    if (screenSize === "sm") scrollAmount = 280;
+    else if (screenSize === "md") scrollAmount = 320;
+    else scrollAmount = 380;
 
     container.scrollBy({
       left: direction === "left" ? -scrollAmount : scrollAmount,
@@ -64,45 +65,111 @@ export default function Home() {
     }
   }
 
-  async function handleSearch({ location }) {
+  // ✅ UPDATED: Handle search with ALL filters - uses /properties/search endpoint
+  async function handleSearch(filters) {
     try {
+      console.log("🔍 SearchBar sent filters:", filters);
       setLoading(true);
       setSearchActive(true);
-      setSearchQuery(location);
-      
-      const { data } = await api.get("/properties/search", {
-        params: { location: location.toLowerCase().trim() },
-      });
+      setErrorMessage("");
+
+      // Build search query display
+      let displayText = [];
+      if (filters.location && filters.location.trim()) {
+        displayText.push(filters.location);
+      }
+      if (filters.number_of_guests && filters.number_of_guests > 1) {
+        displayText.push(`${filters.number_of_guests} guests`);
+      }
+      setSearchQuery(displayText.length > 0 ? displayText.join(" • ") : "Search");
+
+      // Build query parameters
+      const params = new URLSearchParams();
+
+      if (filters.location && filters.location.trim()) {
+        params.append("location", filters.location.trim());
+        console.log("✅ Added location:", filters.location.trim());
+      }
+
+      // ✅ NEW: Add number_of_guests filter
+      if (filters.number_of_guests && filters.number_of_guests > 0) {
+        params.append("number_of_guests", filters.number_of_guests);
+        console.log("✅ Added number_of_guests:", filters.number_of_guests);
+      }
+
+      if (filters.startDate) {
+        params.append("startDate", filters.startDate.toISOString());
+      }
+
+      if (filters.endDate) {
+        params.append("endDate", filters.endDate.toISOString());
+      }
+
+      const fullUrl = `/properties/search?${params.toString()}`;
+      console.log("📡 API URL:", fullUrl);
+
+      // ✅ UPDATED: Use /properties/search endpoint (not /search)
+      const { data } = await api.get(fullUrl);
+
+      console.log("✅ API Response:", data);
+
       const properties = data.properties || [];
+      
+      if (properties.length === 0) {
+        console.warn("⚠️ No properties found!");
+        setErrorMessage("No properties found matching your search");
+        toast.error("No properties found for this search");
+      } else {
+        console.log("✨ Found", properties.length, "properties");
+      }
+
       setGroupedProperties(groupPropertiesByLocation(properties));
     } catch (err) {
-      console.error("Search error:", err);
+      console.error("❌ Search failed:", err);
+      setErrorMessage(`Error: ${err.response?.data?.error || err.message}`);
+      toast.error("Failed to search properties");
       setGroupedProperties({});
     } finally {
       setLoading(false);
     }
   }
 
+  // ✅ Load initial properties
   useEffect(() => {
     (async () => {
+      console.log("📍 Loading initial properties...");
       const userCity = await getUserCity();
+      console.log("📍 User city:", userCity);
       setCity(userCity);
 
       try {
+        console.log("📍 Fetching properties for city:", userCity);
+        
+        // ✅ UPDATED: Use /properties/search endpoint
         const { data } = await api.get("/properties/search", {
           params: { location: userCity.toLowerCase().trim() },
         });
+
+        console.log("📍 Response:", data);
+
         const properties = data.properties || [];
 
         if (properties.length) {
+          console.log("📍 Using city-based properties");
           setGroupedProperties(groupPropertiesByLocation(properties));
         } else {
+          console.log("📍 No properties for city, fetching all...");
+          
+          // ✅ Fallback: Get all properties
           const { data: all } = await api.get("/properties/search");
           const allProperties = all.properties || [];
+          console.log("📍 All properties count:", allProperties.length);
+          
           setGroupedProperties(groupPropertiesByLocation(allProperties));
         }
       } catch (err) {
-        console.error(err);
+        console.error("❌ Error loading properties:", err);
+        setErrorMessage("Failed to load properties");
       }
       setLoading(false);
     })();
@@ -121,10 +188,18 @@ export default function Home() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
         
+        {/* Error Message */}
+        {errorMessage && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-800 font-medium">⚠️ {errorMessage}</p>
+          </div>
+        )}
+        
         {/* Loading */}
         {loading ? (
           <div className="text-center py-12">
             <div className="w-12 h-12 border-4 border-gray-200 border-t-red-500 rounded-full animate-spin mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading properties...</p>
           </div>
         ) : Object.keys(groupedProperties).length > 0 ? (
           <div className="space-y-8 sm:space-y-12">
@@ -148,6 +223,7 @@ export default function Home() {
                   onClick={() => {
                     setSearchActive(false);
                     setSearchQuery("");
+                    setErrorMessage("");
                     window.location.href = "/";
                   }}
                   className="px-3 sm:px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg transition font-semibold text-xs sm:text-sm whitespace-nowrap"
@@ -209,11 +285,17 @@ export default function Home() {
         ) : (
           <div className="text-center py-12">
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900">No properties found</h2>
+            <p className="text-gray-600 mt-2">
+              {searchActive 
+                ? "Try adjusting your search criteria" 
+                : "No properties available in your area"}
+            </p>
             {searchActive && (
               <button
                 onClick={() => {
                   setSearchActive(false);
                   setSearchQuery("");
+                  setErrorMessage("");
                   window.location.href = "/";
                 }}
                 className="mt-4 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition font-semibold text-sm"

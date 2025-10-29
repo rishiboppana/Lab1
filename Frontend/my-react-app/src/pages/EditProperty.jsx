@@ -49,6 +49,7 @@ export default function EditProperty() {
           price_per_night: p.price_per_night,
           bedrooms: p.bedrooms,
           bathrooms: p.bathrooms,
+          number_of_guests: p.number_of_guests || 1,  // ✅ ADD THIS - NEW FIELD
           amenities: amenities,
         });
       } catch (err) {
@@ -133,6 +134,7 @@ export default function EditProperty() {
       data.append('price_per_night', form.price_per_night || '');
       data.append('bedrooms', form.bedrooms || '');
       data.append('bathrooms', form.bathrooms || '');
+      data.append('number_of_guests', form.number_of_guests || 1);  // ✅ ADD THIS - SEND TO BACKEND
       data.append('amenities', form.amenities || '');
 
       // ✅ Send existing images (in case user removed some)
@@ -229,13 +231,24 @@ export default function EditProperty() {
             min="0"
           />
           <input
-            name="amenities"
-            value={form.amenities || ""}
+            name="number_of_guests"
+            type="number"
+            value={form.number_of_guests || ""}
             onChange={handleChange}
-            placeholder="Amenities (comma separated)"
+            placeholder="Number of Guests"
             className="border rounded p-2"
+            required
+            min="1"
           />
         </div>
+
+        <input
+          name="amenities"
+          value={form.amenities || ""}
+          onChange={handleChange}
+          placeholder="Amenities (comma separated)"
+          className="border rounded w-full p-2"
+        />
 
         <textarea
           name="description"
