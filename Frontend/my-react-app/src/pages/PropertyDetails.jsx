@@ -230,7 +230,7 @@ export default function PropertyDetails() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Users size={16} />
-                  Up to 8 guests
+                  Up to {property.number_of_guests} guest{property.number_of_guests !== 1 ? "s" : ""}
                 </div>
               </div>
             </div>
