@@ -1,46 +1,40 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../api/axios";
-import { Star, Home, BedDouble, Bath, Calendar } from "lucide-react";
+import { Star, MapPin, BedDouble, Bath, Users, ChevronLeft, ChevronRight, Home } from "lucide-react";
 import toast from "react-hot-toast";
 import { DateRange } from "react-date-range";
-import { addDays, format } from "date-fns";
+import { format } from "date-fns";
 import { useAuth } from "../context/AuthContext";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
+import "./PropertyDetails.css";
 
 export default function PropertyDetails() {
   const { id } = useParams();
   const [property, setProperty] = useState(null);
   const [reviews, setReviews] = useState([]);
-  const [acceptedBookings, setAcceptedBookings] = useState([]); // ✅ Only accepted
-  const [myBookings, setMyBookings] = useState([]); // ✅ User's bookings (all statuses)
+  const [acceptedBookings, setAcceptedBookings] = useState([]);
   const [newReview, setNewReview] = useState({ rating: 5, comment: "" });
   const { user } = useAuth();
-
+  const [imageIndex, setImageIndex] = useState(0);
   const [range, setRange] = useState([
-    { startDate: new Date(), endDate: addDays(new Date(), 3), key: "selection" },
+    { startDate: new Date(), endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), key: "selection" },
   ]);
 
-  // ✅ Load property info, bookings, and reviews
   useEffect(() => {
     async function fetchData() {
       try {
-        console.log("🔍 Fetching property ID:", id);
-        console.log("👤 Current user:", user);
-
         const res = await api.get(`/properties/${id}`);
         const p = res.data.property;
         const allBookings = res.data.bookings || [];
 
-        console.log("📦 All bookings received:", allBookings);
-
-        // Parse images
         try {
           p.images = typeof p.images === "string" ? JSON.parse(p.images) : p.images;
         } catch {
           p.images = [];
         }
 
-        // Parse amenities
         try {
           p.amenities =
             typeof p.amenities === "string" && p.amenities.startsWith("[")
@@ -53,57 +47,44 @@ export default function PropertyDetails() {
         }
 
         setProperty(p);
-
-        // ✅ Split bookings
         const accepted = allBookings.filter(b => b.status === "Accepted");
-        console.log("✅ Accepted bookings (will block dates):", accepted);
         setAcceptedBookings(accepted);
 
-        // ✅ Get user's own bookings (all statuses)
-        if (user && user.id) {
-          const userBookings = allBookings.filter(b => b.user_id === user.id);
-          console.log("👤 User's bookings:", userBookings);
-          setMyBookings(userBookings);
-        } else {
-          console.log("⚠️ No user logged in");
-          setMyBookings([]);
-        }
-
-        // Load reviews
         const rev = await api.get(`/reviews/${id}`);
-        setReviews(rev.data.reviews);
+        setReviews(rev.data.reviews || []);
       } catch (err) {
-        console.error("❌ Error loading property:", err);
+        console.error("Error loading property:", err);
         toast.error("Failed to load property details");
       }
     }
 
     fetchData();
-  }, [id, user]);
+  }, [id]);
 
   if (!property)
     return (
-      <div className="text-center py-10 text-airbnb-gray">
-        Loading property details...
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-gray-200 border-t-red-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading property details...</p>
+        </div>
       </div>
     );
 
-  const nights =
-    (range[0].endDate - range[0].startDate) / (1000 * 60 * 60 * 24);
-  const total = nights * (property?.price_per_night ?? 0);
+  const nights = Math.ceil((range[0].endDate - range[0].startDate) / (1000 * 60 * 60 * 24));
+  const pricePerNight = parseFloat(property?.price_per_night) || 0;
+  const subtotal = pricePerNight * nights;
+  const serviceFee = subtotal * 0.12;
+  const total = subtotal + serviceFee;
 
   const avg = property.avg_rating ?? "–";
   const count = property.review_count ?? 0;
 
-  // ✅ Check if selected dates overlap with ACCEPTED bookings
   const isDateBlocked = () => {
     const { startDate, endDate } = range[0];
-
     return acceptedBookings.some((booking) => {
       const bookingStart = new Date(booking.check_in);
       const bookingEnd = new Date(booking.check_out);
-
-      // Check if there's any overlap
       return (
         (startDate >= bookingStart && startDate < bookingEnd) ||
         (endDate > bookingStart && endDate <= bookingEnd) ||
@@ -114,11 +95,13 @@ export default function PropertyDetails() {
 
   async function handleReserve() {
     try {
-      if (!user) return toast.error("Please log in first");
-
-      // ✅ Check if dates are blocked
+      if (!user) {
+        toast.error("Please log in first");
+        return;
+      }
       if (isDateBlocked()) {
-        return toast.error("These dates are already booked. Please choose different dates.");
+        toast.error("These dates are already booked");
+        return;
       }
 
       const check_in = format(range[0].startDate, "yyyy-MM-dd");
@@ -131,293 +114,288 @@ export default function PropertyDetails() {
         check_out,
       });
 
-      toast.success("Booking request sent! Waiting for owner approval.");
-
-      // ✅ Reload data
-      const res = await api.get(`/properties/${id}`);
-      const allBookings = res.data.bookings || [];
-
-      const accepted = allBookings.filter(b => b.status === "Accepted");
-      setAcceptedBookings(accepted);
-
-      if (user && user.id) {
-        const userBookings = allBookings.filter(b => b.user_id === user.id);
-        setMyBookings(userBookings);
-      }
+      toast.success("Booking request sent!");
+      setRange([
+        { startDate: new Date(), endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), key: "selection" },
+      ]);
     } catch (err) {
-      if (err.response?.status === 400)
-        toast.error("These dates are already booked.");
-      else toast.error("Failed to create booking");
-      console.error(err);
+      toast.error("Failed to create booking");
     }
   }
 
-  // ✅ Generate disabled dates from ACCEPTED bookings only
   const disabledDates = acceptedBookings.flatMap((booking) => {
     const start = new Date(booking.check_in);
     const end = new Date(booking.check_out);
     const dates = [];
-
     let current = new Date(start);
-    while (current < end) { // Changed <= to < (don't include checkout day)
+    while (current < end) {
       dates.push(new Date(current));
       current.setDate(current.getDate() + 1);
     }
-
     return dates;
   });
 
-  console.log("🚫 Disabled dates:", disabledDates);
+  const handlePrevImage = () => {
+    setImageIndex((prev) => (prev - 1 + property.images.length) % property.images.length);
+  };
+
+  const handleNextImage = () => {
+    setImageIndex((prev) => (prev + 1) % property.images.length);
+  };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 mt-6">
-      {/* ---------- Image Gallery ---------- */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-2 rounded-2xl overflow-hidden">
-        {property.images?.length ? (
-          property.images.slice(0, 5).map((img, i) => (
+    <div className="w-full bg-white">
+      {/* Image Gallery */}
+      <div className="relative bg-gray-100 h-64 sm:h-80 lg:h-[500px]">
+        {property.images?.length > 0 ? (
+          <>
             <img
-              key={i}
               src={
-                img.startsWith("http")
-                  ? img
-                  : `http://localhost:4000${img.startsWith("/") ? img : "/" + img}`
+                property.images[imageIndex].startsWith("http")
+                  ? property.images[imageIndex]
+                  : `http://localhost:4000${property.images[imageIndex]}`
               }
               alt={property.title}
-              onError={(e) => (e.target.src = "https://placehold.co/600x400")}
-              className={`object-cover w-full h-64 ${
-                i === 0 ? "md:col-span-2 lg:col-span-2 h-96" : ""
-              }`}
+              onError={(e) => (e.target.src = "https://placehold.co/1200x600")}
+              className="w-full h-full object-cover"
             />
-          ))
+            
+            {/* Navigation Controls */}
+            {property.images.length > 1 && (
+              <>
+                <button
+                  onClick={handlePrevImage}
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white rounded-full p-1.5 sm:p-2 shadow-lg hover:shadow-xl transition"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft size={20} className="text-gray-900" />
+                </button>
+                <button
+                  onClick={handleNextImage}
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white rounded-full p-1.5 sm:p-2 shadow-lg hover:shadow-xl transition"
+                  aria-label="Next image"
+                >
+                  <ChevronRight size={20} className="text-gray-900" />
+                </button>
+                <div className="absolute bottom-2 sm:bottom-4 right-2 sm:right-4 bg-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold text-gray-900 shadow-lg">
+                  {imageIndex + 1} / {property.images.length}
+                </div>
+              </>
+            )}
+          </>
         ) : (
           <img
-            src="https://placehold.co/600x400?text=No+Image"
+            src="https://placehold.co/1200x600?text=No+Image"
             alt="placeholder"
-            className="object-cover w-full h-96 rounded-2xl"
+            className="w-full h-full object-cover"
           />
         )}
       </div>
 
-      {/* ---------- Header Info ---------- */}
-      <div className="flex justify-between items-start mt-6 flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">{property.title}</h1>
-          <p className="text-gray-600 flex items-center gap-2 mt-1">
-            <Home size={16} /> {property.type || "Property"} •
-            <BedDouble size={16} /> {property.bedrooms || 0} bed(s) •
-            <Bath size={16} /> {property.bathrooms || 0} bath(s)
-          </p>
-          <div className="flex items-center text-sm text-gray-600 mt-1">
-            <Star size={14} className="text-airbnb-red mr-1" />
-            <span className="font-medium">{avg}</span>
-            <span className="mx-1">•</span>
-            <span>{count} reviews</span>
-            <span className="mx-1">•</span>
-            <span>{property.location}</span>
-          </div>
-        </div>
-
-        {/* ---------- Booking Box ---------- */}
-        <div className="border rounded-2xl p-4 shadow-sm text-center w-full md:w-[320px]">
-          <p className="text-xl font-semibold text-airbnb-dark">
-            ${property?.price_per_night ?? 0}
-            <span className="text-sm text-gray-500"> / night</span>
-          </p>
-
-          <DateRange
-            editableDateInputs={true}
-            onChange={(item) => setRange([item.selection])}
-            moveRangeOnFirstSelection={false}
-            ranges={range}
-            rangeColors={["#FF385C"]}
-            minDate={new Date()}
-            disabledDates={disabledDates}
-            className="mt-2"
-          />
-
-          <p className="text-sm text-gray-600 mt-2">
-            {nights} night{nights !== 1 && "s"} • Total{" "}
-            <span className="font-semibold text-black">
-              ${total.toFixed(2)}
-            </span>
-          </p>
-
-          <button
-            onClick={handleReserve}
-            disabled={isDateBlocked()}
-            className={`mt-3 w-full rounded-full py-2 transition ${
-              isDateBlocked()
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-airbnb-red text-white hover:bg-[#E31C5F]"
-            }`}
-          >
-            {isDateBlocked() ? "Dates Not Available" : "Reserve"}
-          </button>
-
-          {/* ---------- User's Own Bookings ---------- */}
-          {myBookings.length > 0 && (
-            <div className="mt-4 text-left border-t pt-3">
-              <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-1">
-                <Calendar size={16} /> Your Bookings
-              </h3>
-              <ul className="text-xs space-y-2">
-                {myBookings.map((b) => (
-                  <li
-                    key={b.id}
-                    className={`p-2 rounded ${
-                      b.status === "Pending"
-                        ? "bg-yellow-50 border border-yellow-200"
-                        : b.status === "Accepted"
-                        ? "bg-green-50 border border-green-200"
-                        : "bg-red-50 border border-red-200"
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <span className="text-gray-700">
-                        {format(new Date(b.check_in), "MMM d")} -{" "}
-                        {format(new Date(b.check_out), "MMM d, yyyy")}
-                      </span>
-                      <span
-                        className={`text-xs font-semibold ${
-                          b.status === "Pending"
-                            ? "text-yellow-600"
-                            : b.status === "Accepted"
-                            ? "text-green-600"
-                            : "text-red-600"
-                        }`}
-                      >
-                        {b.status}
-                      </span>
-                    </div>
-                    {b.status === "Pending" && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        ⏳ Waiting for owner approval
-                      </p>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* ---------- Accepted Bookings (Busy Dates) ---------- */}
-          <div className="mt-4 text-left border-t pt-3">
-            <h3 className="font-semibold text-gray-700 mb-1 flex items-center gap-1">
-              <Calendar size={16} /> Unavailable Dates
-            </h3>
-            {acceptedBookings.length > 0 ? (
-              <ul className="text-xs text-gray-500 space-y-1 max-h-20 overflow-y-auto">
-                {acceptedBookings.map((b, i) => (
-                  <li key={i}>
-                    {format(new Date(b.check_in), "MMM d")} -{" "}
-                    {format(new Date(b.check_out), "MMM d, yyyy")}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-xs text-gray-400">All dates available</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ---------- Description & Amenities ---------- */}
-      <div className="grid md:grid-cols-3 gap-8 mt-8">
-        <div className="md:col-span-2">
-          <p className="text-gray-700 leading-relaxed">
-            {property.description || "No description provided by host."}
-          </p>
-
-          {property.amenities?.length > 0 && (
-            <div className="mt-6">
-              <h3 className="font-semibold mb-2">What this place offers</h3>
-              <ul className="grid sm:grid-cols-2 gap-2 text-gray-600 text-sm">
-                {property.amenities.map((a, i) => (
-                  <li key={i}>• {a}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ---------- Reviews Section ---------- */}
-      <section className="mt-12 border-t pt-6">
-        <h2 className="text-xl font-semibold flex items-center gap-2">
-          <Star className="text-airbnb-red" /> Reviews
-        </h2>
-
-        <div className="space-y-4 mt-4">
-          {reviews.length > 0 ? (
-            reviews.map((r) => (
-              <div key={r.id} className="border-b pb-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{r.user_name}</span>
-                  <span className="text-sm text-gray-500">
-                    {"★".repeat(r.rating)}
-                  </span>
+      <div className="w-full overflow-hidden px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6 overflow-hidden">
+            
+            {/* Header */}
+            <div className="space-y-3 sm:space-y-4">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">{property.title}</h1>
+              
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-gray-600">
+                <div className="flex items-center gap-1">
+                  <Star size={14} className="fill-gray-900 text-gray-900" />
+                  <span className="font-semibold text-gray-900 text-sm sm:text-base">{avg}</span>
+                  <span className="text-xs sm:text-sm">({count} reviews)</span>
                 </div>
-                <p className="text-sm mt-1">{r.comment}</p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {new Date(r.created_at).toLocaleDateString()}
-                </p>
+                <span className="hidden sm:inline">•</span>
+                <div className="flex items-center gap-1 text-xs sm:text-sm">
+                  <MapPin size={14} />
+                  {property.location}
+                </div>
               </div>
-            ))
-          ) : (
-            <p className="text-gray-500 text-sm">No reviews yet.</p>
-          )}
-        </div>
 
-        {/* ---------- Add Review ---------- */}
-        {user && (
-          <div className="mt-6">
-            <h3 className="font-medium mb-2">Leave a review</h3>
-            <select
-              value={newReview.rating}
-              onChange={(e) =>
-                setNewReview({ ...newReview, rating: parseInt(e.target.value) })
-              }
-              className="border rounded px-2 py-1 mr-2"
-            >
-              {[5, 4, 3, 2, 1].map((v) => (
-                <option key={v} value={v}>
-                  {v} stars
-                </option>
-              ))}
-            </select>
-            <textarea
-              placeholder="Share your experience..."
-              className="border rounded w-full p-2 mt-2"
-              value={newReview.comment}
-              onChange={(e) =>
-                setNewReview({ ...newReview, comment: e.target.value })
-              }
-            />
-            <button
-              onClick={async () => {
-                try {
-                  if (!user) return toast.error("Please log in first");
-                  await api.post("/reviews", {
-                    property_id: property.id,
-                    user_id: user.id,
-                    rating: newReview.rating,
-                    comment: newReview.comment,
-                  });
-                  toast.success("Review added!");
-                  const { data } = await api.get(`/reviews/${property.id}`);
-                  setReviews(data.reviews);
-                  setNewReview({ rating: 5, comment: "" });
-                } catch {
-                  toast.error("Failed to add review");
-                }
-              }}
-              className="mt-2 bg-airbnb-red text-white px-4 py-2 rounded-full hover:bg-[#E31C5F]"
-            >
-              Submit
-            </button>
+              <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 py-3 sm:py-4 border-y border-gray-200">
+                <div className="flex items-center gap-2">
+                  <Home size={16} />
+                  {property.type || "Property"}
+                </div>
+                <div className="flex items-center gap-2">
+                  <BedDouble size={16} />
+                  {property.bedrooms} bed{property.bedrooms !== 1 ? "s" : ""}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Bath size={16} />
+                  {property.bathrooms} bath{property.bathrooms !== 1 ? "s" : ""}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users size={16} />
+                  Up to 8 guests
+                </div>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-3 sm:space-y-4">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">About this place</h2>
+              <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+                {property.description || "No description provided by host."}
+              </p>
+            </div>
+
+            {/* Amenities */}
+            {property.amenities?.length > 0 && (
+              <div className="space-y-3 sm:space-y-4">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">What this place offers</h2>
+                <div className="grid sm:grid-cols-2 gap-2 sm:gap-4">
+                  {property.amenities.map((a, i) => (
+                    <div key={i} className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-gray-700">
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gray-200 flex items-center justify-center text-xs flex-shrink-0">✓</div>
+                      <span>{a}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Reviews */}
+            <div className="space-y-4 sm:space-y-6 py-6 sm:py-8 border-t border-gray-200">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Reviews</h2>
+              
+              <div className="grid sm:grid-cols-2 gap-3 sm:gap-6">
+                {reviews.length > 0 ? (
+                  reviews.map((r) => (
+                    <div key={r.id} className="p-3 sm:p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-start justify-between mb-2">
+                        <span className="font-semibold text-gray-900 text-sm">{r.user_name}</span>
+                        <span className="text-xs text-gray-600">
+                          {"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}
+                        </span>
+                      </div>
+                      <p className="text-gray-600 text-xs sm:text-sm mb-2">{r.comment}</p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(r.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-sm col-span-2">No reviews yet. Be the first to review!</p>
+                )}
+              </div>
+
+              {/* Add Review */}
+              {user && (
+                <div className="p-3 sm:p-6 bg-gray-50 rounded-lg space-y-3 sm:space-y-4 border border-gray-200">
+                  <h3 className="font-bold text-gray-900 text-sm sm:text-base">Share your experience</h3>
+                  <select
+                    value={newReview.rating}
+                    onChange={(e) => setNewReview({ ...newReview, rating: parseInt(e.target.value) })}
+                    className="w-full px-3 sm:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  >
+                    {[5, 4, 3, 2, 1].map((v) => (
+                      <option key={v} value={v}>{v} stars</option>
+                    ))}
+                  </select>
+                  <textarea
+                    placeholder="Tell others what you think..."
+                    className="w-full px-3 sm:px-4 py-2 text-sm border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-red-500"
+                    rows={3}
+                    value={newReview.comment}
+                    onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
+                  />
+                  <button
+                    onClick={async () => {
+                      try {
+                        if (!user) return toast.error("Please log in");
+                        if (!newReview.comment.trim()) return toast.error("Please write a review");
+                        
+                        await api.post("/reviews", {
+                          property_id: property.id,
+                          user_id: user.id,
+                          rating: newReview.rating,
+                          comment: newReview.comment,
+                        });
+                        toast.success("Review added!");
+                        const { data } = await api.get(`/reviews/${property.id}`);
+                        setReviews(data.reviews || []);
+                        setNewReview({ rating: 5, comment: "" });
+                      } catch (err) {
+                        toast.error("Failed to add review");
+                      }
+                    }}
+                    className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 sm:py-3 text-sm rounded-lg transition"
+                  >
+                    Submit Review
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        )}
-      </section>
+
+          {/* Booking Card - Sticky */}
+          <div className="lg:col-span-1 w-full overflow-hidden">
+            <div className="sticky top-20 sm:top-24 bg-white border border-gray-200 rounded-xl shadow-lg p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6 w-full">
+              
+              {/* Price */}
+              <div>
+                <div className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  ${pricePerNight.toFixed(0)}
+                  <span className="text-base sm:text-lg font-normal text-gray-600"> / night</span>
+                </div>
+              </div>
+
+              {/* Date Picker */}
+              <div className="rdr-calendar-wrapper">
+                <DateRange
+                  editableDateInputs={false}
+                  onChange={(item) => setRange([item.selection])}
+                  moveRangeOnFirstSelection={false}
+                  ranges={range}
+                  rangeColors={["#FF385C"]}
+                  minDate={new Date()}
+                  disabledDates={disabledDates}
+                  direction="vertical"
+                />
+              </div>
+
+              {/* Price Breakdown */}
+              <div className="price-breakdown space-y-2 py-3 sm:py-4 border-y border-gray-200">
+                <div className="flex justify-between text-gray-600 text-xs sm:text-sm">
+                  <span>${pricePerNight.toFixed(0)} × {nights} night{nights !== 1 ? "s" : ""}</span>
+                  <span>${subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-gray-600 text-xs sm:text-sm">
+                  <span>Service fee</span>
+                  <span>${serviceFee.toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Total */}
+              <div className="flex justify-between items-center font-bold">
+                <span className="text-gray-900 text-sm sm:text-base">Total</span>
+                <span className="text-gray-900 text-lg sm:text-xl">${total.toFixed(2)}</span>
+              </div>
+
+              {/* Reserve Button */}
+              <button
+                onClick={handleReserve}
+                disabled={isDateBlocked()}
+                className={`w-full py-2.5 sm:py-3 rounded-lg font-bold text-white text-sm sm:text-base transition ${
+                  isDateBlocked()
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : "bg-red-500 hover:bg-red-600"
+                }`}
+              >
+                {isDateBlocked() ? "Dates Not Available" : "Reserve"}
+              </button>
+
+              <p className="text-xs text-gray-500 text-center">
+                You won't be charged yet
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

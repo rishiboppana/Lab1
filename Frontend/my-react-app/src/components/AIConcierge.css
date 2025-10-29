@@ -31,6 +31,7 @@
 .ai-concierge-button svg {
   width: 20px;
   height: 20px;
+  flex-shrink: 0;
 }
 
 /* Side Panel */
@@ -93,6 +94,7 @@
   align-items: center;
   justify-content: center;
   transition: background 0.2s;
+  flex-shrink: 0;
 }
 
 .close-button:hover {
@@ -365,6 +367,7 @@
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 8px;
+  gap: 8px;
 }
 
 .activity-header h6 {
@@ -382,6 +385,7 @@
   border-radius: 4px;
   font-size: 12px;
   font-weight: 600;
+  flex-shrink: 0;
 }
 
 .activity-card .address,
@@ -413,6 +417,7 @@
   margin-top: 8px;
   font-size: 12px;
   color: #667eea;
+  flex-wrap: wrap;
 }
 
 /* Restaurants Section */
@@ -447,6 +452,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+  gap: 8px;
 }
 
 .restaurant-header h6 {
@@ -454,12 +460,14 @@
   font-size: 15px;
   font-weight: 600;
   color: #2d3748;
+  flex: 1;
 }
 
 .rating {
   color: #f59e0b;
   font-size: 13px;
   font-weight: 600;
+  flex-shrink: 0;
 }
 
 .restaurant-card .cuisine,
@@ -508,20 +516,6 @@
   line-height: 1.5;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .ai-concierge-panel {
-    width: 100%;
-  }
-  
-  .ai-concierge-button {
-    bottom: 16px;
-    right: 16px;
-    padding: 12px 20px;
-    font-size: 14px;
-  }
-}
-
 /* Scrollbar Styling */
 .panel-content::-webkit-scrollbar {
   width: 8px;
@@ -538,4 +532,140 @@
 
 .panel-content::-webkit-scrollbar-thumb:hover {
   background: #a0aec0;
+}
+
+/* === RESPONSIVE DESIGN === */
+
+/* Large Tablets */
+@media (max-width: 1024px) {
+  .ai-concierge-panel {
+    width: 70vw;
+  }
+}
+
+/* Medium Tablets */
+@media (max-width: 900px) {
+  .ai-concierge-panel {
+    width: 80vw;
+  }
+
+  .panel-header h3 {
+    font-size: 18px;
+  }
+  
+  .panel-content {
+    padding: 16px 18px;
+  }
+
+  .booking-card,
+  .day-card {
+    padding: 14px;
+  }
+}
+
+/* Tablets / Large Phones */
+@media (max-width: 768px) {
+  .ai-concierge-panel {
+    width: 100vw;
+  }
+
+  .ai-concierge-button {
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+
+  .panel-header {
+    padding: 16px 20px;
+  }
+
+  .panel-header h3 {
+    font-size: 17px;
+  }
+
+  .user-input {
+    font-size: 13px;
+  }
+
+  .day-header h5 {
+    font-size: 16px;
+  }
+
+  .activity-card,
+  .restaurant-card {
+    padding: 12px;
+  }
+}
+
+/* Mobile Phones */
+@media (max-width: 480px) {
+  .ai-concierge-button {
+    bottom: 16px;
+    right: 16px;
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ai-concierge-button span {
+    display: none;
+  }
+
+  .ai-concierge-button svg {
+    width: 24px;
+    height: 24px;
+    margin: 0;
+  }
+
+  .panel-header {
+    padding: 14px 16px;
+  }
+
+  .panel-header h3 {
+    font-size: 16px;
+  }
+  
+  .panel-header p {
+    font-size: 11px;
+  }
+
+  .panel-content {
+    padding: 14px 16px;
+    padding-bottom: 80px;
+  }
+
+  .activity-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .price-tier {
+    margin-top: 6px;
+  }
+
+  .booking-card,
+  .day-card,
+  .activity-card,
+  .restaurant-card {
+    padding: 12px;
+  }
+
+  .selected-badge {
+    top: 8px;
+    right: 8px;
+    font-size: 11px;
+    padding: 3px 10px;
+  }
+}
+
+/* iOS Safari Fix */
+@supports (-webkit-touch-callout: none) {
+  .ai-concierge-panel {
+    height: -webkit-fill-available;
+  }
 }

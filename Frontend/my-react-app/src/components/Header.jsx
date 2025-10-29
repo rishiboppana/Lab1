@@ -1,3 +1,4 @@
+// src/components/Header.jsx
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useRef, useState } from "react";
@@ -19,56 +20,82 @@ export default function Header() {
     return () => window.removeEventListener("click", handler);
   }, []);
 
+  // Close menu on route change
+  useEffect(() => {
+    setMenuOpen(false);
+  }, []);
+
   async function logout() {
     await fetch("http://localhost:4000/api/auth/logout", {
       method: "POST",
       credentials: "include",
     });
     setUser(null);
+    setMenuOpen(false);
     navigate("/login");
   }
 
   async function handleBecomeHost() {
     try {
       const { data } = await api.post("/auth/become-host", {}, { withCredentials: true });
-      setUser(data.user);
+      setUser(data.user); // update context
       toast.success("You are now a host!");
-      navigate("/post");
+      setMenuOpen(false);
+      navigate("/post"); // redirect to Post Property page
     } catch (err) {
       toast.error(err.response?.data?.error || "Failed to become host");
     }
   }
 
+  const handleMenuItemClick = () => {
+    setMenuOpen(false);
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-white border-b">
-      <div className="max-w-6xl mx-auto flex justify-between items-center h-16 px-4 sm:px-6">
-        <Link to="/" className="flex items-center gap-1">
-          <span className="text-airbnb-red font-extrabold text-xl sm:text-2xl">airbnb</span>
+      <div className="max-w-6xl mx-auto flex justify-between items-center h-16 px-6">
+        <Link to="/" className="flex items-center gap-1" onClick={handleMenuItemClick}>
+          <span className="text-airbnb-red font-extrabold text-2xl">airbnb</span>
         </Link>
 
-        <div className="flex items-center gap-2 sm:gap-4">
+        {/*<SearchPill />*/}
+
+        <div className="flex items-center gap-4">
+          {/* Only show "Become a host" if user is logged in AND role is NOT owner */}
           {user && user.role !== "owner" && (
             <button
               onClick={handleBecomeHost}
-              className="text-xs sm:text-sm font-semibold hover:bg-gray-50 rounded-full px-3 sm:px-4 py-2 transition"
+              className="text-sm font-semibold hover:bg-gray-50 rounded-full px-4 py-2 transition"
             >
               Become a Host
             </button>
           )}
 
+          {/* Show "Airbnb your home" if user is already an owner */}
           {user && user.role === "owner" && (
             <Link
               to="/add-property"
-              className="text-xs sm:text-sm font-semibold hover:bg-gray-50 rounded-full px-3 sm:px-4 py-2 transition"
+              className="text-sm font-semibold hover:bg-gray-50 rounded-full px-4 py-2 transition"
+              onClick={handleMenuItemClick}
             >
               Airbnb your home
             </Link>
           )}
 
+          {/* User Role Badge */}
+          {user && (
+            <div className={`px-3 py-1.5 rounded-full text-xs font-semibold text-white ${
+              user.role === "owner" ? "bg-green-500" : "bg-blue-500"
+            }`}>
+              {user.role === "owner" ? "🏠 Host" : "✈️ Traveler"}
+            </div>
+          )}
+
+          {/* Profile dropdown */}
           <div className="relative" ref={ref}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="flex items-center gap-2 border rounded-full px-2 sm:px-3 py-1.5 hover:shadow-md transition"
+              className="flex items-center gap-2 border rounded-full px-3 py-1.5 hover:shadow-md transition"
             >
               <Menu size={16} />
               <User size={18} className="text-gray-500" />
@@ -81,10 +108,18 @@ export default function Header() {
               >
                 {!user && (
                   <>
-                    <Link className="block px-4 py-3 hover:bg-gray-50" to="/signup">
+                    <Link 
+                      className="block px-4 py-3 hover:bg-gray-50" 
+                      to="/signup"
+                      onClick={handleMenuItemClick}
+                    >
                       Sign up
                     </Link>
-                    <Link className="block px-4 py-3 hover:bg-gray-50" to="/login">
+                    <Link 
+                      className="block px-4 py-3 hover:bg-gray-50" 
+                      to="/login"
+                      onClick={handleMenuItemClick}
+                    >
                       Log in
                     </Link>
                   </>
@@ -92,10 +127,18 @@ export default function Header() {
 
                 {user?.role === "owner" && (
                   <>
-                    <Link to="/add-property" className="block px-4 py-3 hover:bg-gray-50 font-medium">
+                    <Link 
+                      to="/add-property" 
+                      className="block px-4 py-3 hover:bg-gray-50 font-medium"
+                      onClick={handleMenuItemClick}
+                    >
                       Add Property
                     </Link>
-                    <Link to="/owner" className="block px-4 py-3 hover:bg-gray-50 font-medium">
+                    <Link 
+                      to="/owner" 
+                      className="block px-4 py-3 hover:bg-gray-50 font-medium"
+                      onClick={handleMenuItemClick}
+                    >
                       Owner Dashboard
                     </Link>
                     <hr className="my-2" />
@@ -104,13 +147,25 @@ export default function Header() {
 
                 {user && (
                   <>
-                    <Link className="block px-4 py-3 hover:bg-gray-50" to="/profile">
+                    <Link 
+                      className="block px-4 py-3 hover:bg-gray-50" 
+                      to="/profile"
+                      onClick={handleMenuItemClick}
+                    >
                       Profile
                     </Link>
-                    <Link to="/my-trips" className="block px-4 py-3 hover:bg-gray-50">
+                    <Link 
+                      to="/my-trips" 
+                      className="block px-4 py-3 hover:bg-gray-50"
+                      onClick={handleMenuItemClick}
+                    >
                       My Trips
                     </Link>
-                    <Link to="/favorites" className="block px-4 py-3 hover:bg-gray-50">
+                    <Link 
+                      to="/favorites" 
+                      className="block px-4 py-3 hover:bg-gray-50"
+                      onClick={handleMenuItemClick}
+                    >
                       Favorites
                     </Link>
                     <hr className="my-2" />
@@ -128,5 +183,21 @@ export default function Header() {
         </div>
       </div>
     </header>
+  );
+}
+
+function SearchPill() {
+  return (
+    <button
+      className="hidden md:flex items-center justify-between rounded-full border py-2 px-4 hover:shadow-md transition text-sm space-x-4 bg-white"
+    >
+      <span className="font-medium border-r pr-4 text-black">Where</span>
+      <span className="text-gray-600 border-r pr-4">Check in</span>
+      <span className="text-gray-600 border-r pr-4">Check out</span>
+      <span className="text-gray-600">Who</span>
+      <div className="ml-2 bg-airbnb-red text-white rounded-full w-8 h-8 grid place-items-center">
+        🔍
+      </div>
+    </button>
   );
 }

@@ -1,0 +1,71 @@
+/* Calendar Wrapper */
+.rdr-calendar-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+.rdrDateRangeWrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  border: none !important;
+  background: transparent !important;
+  font-size: 14px;
+}
+
+.rdrCalendarWrapper {
+  width: 100% !important;
+  flex: 1;
+  min-width: 0;
+}
+
+.rdrMonths {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.rdrMonth {
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+}
+
+.rdrDayNumber,
+.rdrDayNumber span {
+  font-size: 13px;
+}
+
+.rdrDayWeekdayLabel {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rdrDay {
+  width: 14.28%;
+  padding: 0 !important;
+}
+
+.rdrCell {
+  padding: 0 !important;
+}
+
+.rdrInput {
+  display: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .rdrDateRangeWrapper {
+    font-size: 12px;
+  }
+
+  .rdrDayNumber,
+  .rdrDayNumber span {
+    font-size: 11px;
+  }
+
+  .rdrDayWeekdayLabel {
+    font-size: 10px;
+  }
+}

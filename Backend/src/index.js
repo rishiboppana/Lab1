@@ -36,6 +36,8 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files - ADD THIS
+app.use(express.static(path.join(process.cwd(), "src/uploads")));
 
 // sessions
 
