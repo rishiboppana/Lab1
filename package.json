@@ -1,5 +1,25 @@
 {
   "dependencies": {
-    "lucide-react": "^0.548.0"
-  }
+    "kafkajs": "^2.2.4",
+    "lucide-react": "^0.548.0",
+    "mongoose": "^8.19.3"
+  },
+  "name": "lab1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rishiboppana/Lab1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rishiboppana/Lab1/issues"
+  },
+  "homepage": "https://github.com/rishiboppana/Lab1#readme"
 }
