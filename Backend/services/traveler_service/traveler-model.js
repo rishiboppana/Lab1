@@ -16,7 +16,7 @@ const travelerSchema = new mongoose.Schema({
     country: String,
     languages: String,
     gender: String,
-    avatar_url: String  // This stores the image URL
+    avatar_url: String 
 }, { timestamps: true })
 
 export default mongoose.model('traveler', travelerSchema)

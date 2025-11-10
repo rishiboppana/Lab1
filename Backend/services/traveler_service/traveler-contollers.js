@@ -17,3 +17,8 @@ export async function updateUser(id, details){
     }
     else return {"message": "Profile Not Found"}
 }
+
+export async function createUser(details){
+    const newTraveler = await traveler.create(details)
+    console.log(newTraveler)
+}
