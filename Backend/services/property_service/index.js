@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 require('dotenv').config() 
 const propertyRoutes = require('./routes.js')
 
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/sessions"
+const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/airbnb"
 const PORT = process.env.PORT || 9092
 
 mongoose.connect(MONGO_URI)
