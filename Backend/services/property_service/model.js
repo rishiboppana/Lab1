@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-
+const inc = require('mongoose-sequence')(mongoose)
 const propertySchema = mongoose.Schema({
     id : Number , 
     owner_id : Number , 
@@ -12,6 +12,8 @@ const propertySchema = mongoose.Schema({
     images : [String] , 
     number_of_guests : Number
 } , {timestamps : true})
+
+propertySchema.plugin(inc,{inc_field : 'id'})
 
 const propertyModel = mongoose.model('Properties' , propertySchema)
 
