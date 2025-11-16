@@ -4,7 +4,7 @@ require('dotenv').config()
 const propertyRoutes = require('./routes.js')
 
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/airbnb"
-const PORT = process.env.PORT || 9092
+const PORT = process.env.PORT || 9093
 
 mongoose.connect(MONGO_URI)
     .then(() => console.log("MongoDB connected successfully"))
