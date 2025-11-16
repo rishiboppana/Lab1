@@ -1,5 +1,6 @@
 const express = require('express')
 const { getProperties, getProperty, postProperty, putProperty, deleteProperty } = require("./controller.js")
+const { verifyLogin , verifyOwner } = require('./middleware.js')
 
 const r = express.Router()
 
@@ -21,7 +22,7 @@ r.get('/properties/:id', async (req, res) => {
     }
 })
 
-r.post('/properties', async (req, res) => {
+r.post('/properties', verifyOwner , async (req, res) => {
     try {
         const response = await postProperty(req.body)
         res.status(201).json(response)
@@ -30,7 +31,7 @@ r.post('/properties', async (req, res) => {
     }
 })
 
-r.put('/properties/:id', async (req, res) => {
+r.put('/properties/:id', verifyOwner , async (req, res) => {
     try {
         const response = await putProperty(req.params.id, req.body)
         res.status(200).json(response)
@@ -39,7 +40,7 @@ r.put('/properties/:id', async (req, res) => {
     }
 })
 
-r.delete('/properties/:id', async (req, res) => {
+r.delete('/properties/:id', verifyOwner , async (req, res) => {
     try {
         const response = await deleteProperty(req.params.id)
         res.status(200).json(response)

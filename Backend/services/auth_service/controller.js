@@ -7,20 +7,36 @@ exports.signup = async (req, res) => {
   try {
     const { name, email, phone, password, role } = req.body
 
-    const present = await Traveler.findOne({ where: { email }})
-    if (present) {
-      return res.status(400).json({ message: "Failed", reason: "Email already in use" })
+    if (role == "traveler"){
+      const present = await Traveler.findOne({ where: { email }})
+      if (present) {
+        return res.status(400).json({ message: "Failed", reason: "Email already in use" })
+      }
+
+      const password_hash = await bcrypt.hash(password, 10)
+
+      await Traveler.create({
+        name,
+        email,
+        password_hash,
+        phone
+      })
     }
+    else if (role == "owner"){
+      const present = await Owner.findOne({ where: { email }})
+      if (present) {
+        return res.status(400).json({ message: "Failed", reason: "Email already in use" })
+      }
 
-    const password_hash = await bcrypt.hash(password, 10)
+      const password_hash = await bcrypt.hash(password, 10)
 
-    await Traveler.create({
-      name,
-      email,
-      password_hash,
-      phone
-    })
-
+      await Owner.create({
+        name,
+        email,
+        password_hash,
+        phone
+      })
+    }
     const token = jwt.sign(
       { email, role },
       process.env.SECRET_KEY,
