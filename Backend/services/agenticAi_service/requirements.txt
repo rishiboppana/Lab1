@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+
+langchain
+langchain-core
+langchain-community
+langchain-text-splitters
+
+tavily-python
+
+sqlalchemy
+pymysql
+
+python-dotenv
+
+requests
