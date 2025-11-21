@@ -1,34 +1,19 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from agents import planner
 from typing import Optional
-from dotenv import load_dotenv
-load_dotenv()
+
+from chat_agent import chat_agent
 
 app = FastAPI()
 
-class Question(BaseModel):
+class ChatRequest(BaseModel):
     question: str
     bookingId: Optional[int] = None
-    userId: Optional[int] = None
-    propertyId: Optional[int] = None
 
 
-@app.post("/agent")
-def answer(payload: Question):
-    booking_data = None
-
-    # if payload.bookingId:
-    #     booking_data = get_booking_by_id(payload.bookingId)
-
-    # Provide booking info into the prompt if exists
-    prompt = f"""
-    User question: {payload.question}
-    Booking Id : {payload.bookingId}
-    user Id : {payload.userId}
-    property Id : {payload.propertyId}
-    """
-
-    response = planner(prompt)
-    return {"answer": response, "booking": booking_data}
-
+@app.post("/chat")
+def chat(req: ChatRequest):
+    # Pass booking_id directly, not the booking_data dict
+    answer = chat_agent(req.question, req.bookingId)
+    
+    return {"answer": answer}
