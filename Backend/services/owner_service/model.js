@@ -7,10 +7,10 @@ const sql = new Sequelize('airbnb', 'root', "1234", {
     logging: false
 })
 
-const { DataTypes } = require("sequelize");
-const sequelize = require("../config/db");
+// const { DataTypes } = require("sequelize");
+// const sequelize = require("../config/db");
 
-const Owner = sequelize.define(
+const Owner = sql.define(
   "Owner",
   {
     id: {
