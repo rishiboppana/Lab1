@@ -1,6 +1,7 @@
 // src/controllers/auth.controller.js
 import bcrypt from "bcryptjs";
 import { User } from "../models/User.js";
+import { Session } from "../models/session.js";
 
 export async function signup(req, res) {
   try {
@@ -33,10 +34,13 @@ export async function login(req, res) {
 
     const u = await User.findByEmail(email);
     if (!u) return res.status(401).json({ error: "Invalid credentials" });
-
+    // const pwd_hash = password
     const ok = await bcrypt.compare(password, u.password_hash);
     if (!ok) return res.status(401).json({ error: "Invalid credentials" });
-
+    await Session.create({
+      email,
+      pwd_hash: u.password_hash,   // safe
+    });
     req.session.user = { id: u.id, role: u.role, name: u.name };
     console.log("Session created for:", req.session.user);
     return res.json({ user: req.session.user });

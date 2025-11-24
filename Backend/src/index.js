@@ -16,7 +16,9 @@ import favoriteRoutes from './routes/favorite.routes.js';
 import reviewRoutes from "./routes/reviews.js";
 import bookingRoutes from "./routes/bookings.js";
 import ownerRoutes from "./routes/owner.js";
+import { connectMongo } from "./config/mongo.js";
 
+connectMongo();
 
 // get __dirname
 const __filename = fileURLToPath(import.meta.url);
