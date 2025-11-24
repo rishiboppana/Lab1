@@ -26,7 +26,7 @@ export default function Header() {
   }, []);
 
   async function logout() {
-    await fetch("http://localhost:4000/api/auth/logout", {
+    await fetch("/api/auth/logout", {
       method: "POST",
       credentials: "include",
     });

@@ -78,7 +78,7 @@ export default function OwnerDashboard() {
       const imgs = typeof images === "string" ? JSON.parse(images) : images;
       if (Array.isArray(imgs) && imgs.length > 0) {
         const firstImg = imgs[0];
-        return firstImg.startsWith("http") ? firstImg : `http://localhost:4000${firstImg}`;
+        return firstImg.startsWith("http") ? firstImg : `${firstImg}`;
       }
     } catch (err) {
       console.error("Error parsing images:", err);

@@ -65,7 +65,7 @@ export default function Owner() {
             imgs && imgs.length > 0
               ? imgs[0].startsWith("http")
                 ? imgs[0]
-                : `http://localhost:4000${imgs[0]}`
+                : `${imgs[0]}`
               : "https://placehold.co/600x400?text=No+Image";
 
           return (

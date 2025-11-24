@@ -153,7 +153,7 @@ export default function PropertyDetails() {
               src={
                 property.images[imageIndex].startsWith("http")
                   ? property.images[imageIndex]
-                  : `http://localhost:4000${property.images[imageIndex]}`
+                  : `${property.images[imageIndex]}`
               }
               alt={property.title}
               onError={(e) => (e.target.src = "https://placehold.co/1200x600")}

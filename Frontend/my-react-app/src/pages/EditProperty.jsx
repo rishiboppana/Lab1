@@ -263,7 +263,7 @@ export default function EditProperty() {
                 {existingImages.map((img, index) => (
                   <div key={index} className="relative group">
                     <img
-                      src={`http://localhost:4000${img}`}
+                      src={`${img}`}
                       alt={`Property ${index + 1}`}
                       className="w-full h-24 object-cover rounded border"
                     />

@@ -16,9 +16,11 @@ import favoriteRoutes from './routes/favorite.routes.js';
 import reviewRoutes from "./routes/reviews.js";
 import bookingRoutes from "./routes/bookings.js";
 import ownerRoutes from "./routes/owner.js";
+import MongoStore from "connect-mongo";
 import { connectMongo } from "./config/mongo.js";
 
 connectMongo();
+
 
 // get __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -29,7 +31,7 @@ const app = express();
 // middlewares
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.ORIGIN || 'http://localhost',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -45,18 +47,23 @@ app.use(express.static(path.join(process.cwd(), "src/uploads")));
 
 app.use(
   session({
-    name: "sid",
-    secret: "supersecretkey",
+    name: process.env.SESSION_NAME || "sid",
+    secret: process.env.SESSION_SECRET || "supersecretkey",
     resave: false,
     saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGODB_URI, // You already set ENV for this!
+      ttl: 60 * 60 * 24 * 7, // 7 days
+    }),
     cookie: {
       httpOnly: true,
-      secure: false,
+      secure: false, // keep false unless using HTTPS ingress
       sameSite: "lax",
       maxAge: 1000 * 60 * 60 * 2, // 2 hours
     },
   })
 );
+
 // serve uploaded images
 app.use("/uploads", express.static(path.join(process.cwd(), "src/uploads")));
 

@@ -100,7 +100,7 @@ export default function Profile() {
               <div className="flex justify-center">
                 {preview ? (
                   <img 
-                    src={preview.startsWith("http") ? preview : `http://localhost:4000${preview}`}
+                    src={preview.startsWith("http") ? preview : `${preview}`}
                     alt="avatar" 
                     className="w-32 h-32 rounded-full object-cover border-4 border-red-100"
                   />

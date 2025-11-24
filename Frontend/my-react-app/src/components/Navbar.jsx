@@ -15,7 +15,7 @@ export default function Navbar() {
   },[]);
 
   async function logout() {
-    await fetch("http://localhost:4000/api/auth/logout", { method:"POST", credentials:"include" });
+    await fetch("/api/auth/logout", { method:"POST", credentials:"include" });
     setUser(null);
     navigate("/login");
   }

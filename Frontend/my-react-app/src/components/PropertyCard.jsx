@@ -15,7 +15,7 @@ export default function PropertyCard({ p }) {
   // Get cover image
   let cover = imgs?.[0] || "";
   if (cover && !cover.startsWith("http")) {
-    cover = `http://localhost:4000${cover}`;
+    cover = `${cover}`;
   }
 
   const handleImgError = (e) => {

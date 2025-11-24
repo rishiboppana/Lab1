@@ -56,7 +56,7 @@ export default function Home() {
 
   async function getUserCity() {
     try {
-      const res = await fetch("http://localhost:4000/api/location");
+      const res = await fetch("/api/location");
       const data = await res.json();
       return data.city || "your area";
     } catch {

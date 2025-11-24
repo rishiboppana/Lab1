@@ -2,7 +2,8 @@ import mongoose from "mongoose";
 
 export async function connectMongo() {
   try {
-    await mongoose.connect("mongodb://127.0.0.1:27017/sessiondb");
+    const mongoUri = process.env.MONGODB_URI || "mongodb://admin:adminpassword@mongodb:27017/sessiondb?authSource=admin";
+    await mongoose.connect(mongoUri);
     console.log("🍃 MongoDB connected");
   } catch (err) {
     console.error("MongoDB error:", err);

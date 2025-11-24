@@ -107,7 +107,7 @@ export default function Favorites() {
                 if (Array.isArray(imgs) && imgs.length > 0) {
                   imgUrl = imgs[0].startsWith("http") 
                     ? imgs[0] 
-                    : `http://localhost:4000${imgs[0]}`;
+                    : `${imgs[0]}`;
                 }
               } catch (err) {
                 console.error("Error parsing images:", err);

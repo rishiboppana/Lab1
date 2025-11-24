@@ -26,7 +26,7 @@ const AIConcierge = ({ userId }) => {
 
   const fetchUserBookings = async () => {
     try {
-      const response = await axios.get(`http://localhost:4000/api/bookings/upcoming/${userId}`);
+      const response = await axios.get(`/api/bookings/upcoming/${userId}`);
       console.log('✅ Fetched bookings:', response.data);
 
       const bookingsData = Array.isArray(response.data)

@@ -3,7 +3,7 @@ import { handleBookingMessage } from "./handlers/booking.handler.js";
 
 const kafka = new Kafka({
   clientId: "booking-service",
-  brokers: ["localhost:9092"],
+  brokers: [process.env.KAFKA_BROKERS || "localhost:9092"], // Use env variable
 });
 
 const consumer = kafka.consumer({ groupId: "booking-group" });
@@ -24,4 +24,4 @@ async function start() {
   });
 }
 
-start();
+start().catch(console.error);
